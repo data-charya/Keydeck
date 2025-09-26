@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const host = searchParams.get('host') || 'localhost'
     const port = parseInt(searchParams.get('port') || '6379')
+    const username = searchParams.get('username') || ''
     const password = searchParams.get('password') || ''
 
     // Test authentication if password is provided
@@ -13,7 +14,8 @@ export async function GET(request: NextRequest) {
       // Test without password first
       const client = createRedisClient({ 
         host, 
-        port
+        port,
+        username: username || undefined
       })
       
       try {
@@ -48,6 +50,7 @@ export async function GET(request: NextRequest) {
       const client = createRedisClient({ 
         host, 
         port,
+        username: username || undefined,
         password
       })
       

@@ -146,8 +146,10 @@ export default function RedisGUI() {
                       Test connection issues
                     </div>
                     <ConnectionDiagnostics
-                      host="localhost"
-                      port={6379}
+                      host={connection?.host || "localhost"}
+                      port={connection?.port || 6379}
+                      username={connection?.username}
+                      password={connection?.password}
                     />
                   </div>
                 </div>
@@ -178,6 +180,8 @@ export default function RedisGUI() {
                   <ConnectionDiagnostics
                     host="localhost"
                     port={6379}
+                    username=""
+                    password=""
                   />
                 </div>
               </div>

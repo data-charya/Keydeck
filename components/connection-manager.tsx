@@ -366,6 +366,7 @@ function ConnectionForm({
   const [config, setConfig] = useState({
     host: "localhost",
     port: 6379,
+    username: "",
     password: "",
     database: 0,
   })
@@ -415,6 +416,15 @@ function ConnectionForm({
             placeholder="6379"
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Username (optional)</label>
+        <Input
+          value={config.username}
+          onChange={(e) => setConfig({ ...config, username: e.target.value })}
+          placeholder="Enter username if required"
+        />
       </div>
 
       <div className="space-y-2">

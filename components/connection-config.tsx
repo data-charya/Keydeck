@@ -16,6 +16,7 @@ interface ConnectionConfigProps {
 export interface RedisConfig {
   host: string
   port: number
+  username?: string
   password?: string
   database?: number
 }
@@ -24,6 +25,7 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
   const [config, setConfig] = useState<RedisConfig>({
     host: "localhost",
     port: 6379,
+    username: "",
     password: "",
     database: 0,
   })
@@ -105,6 +107,16 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
               placeholder="6379"
             />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="username">Username (optional)</Label>
+          <Input
+            id="username"
+            value={config.username}
+            onChange={(e) => setConfig({ ...config, username: e.target.value })}
+            placeholder="Enter username if required"
+          />
         </div>
 
         <div className="space-y-2">

@@ -5,6 +5,7 @@ import Redis from 'ioredis'
 export interface RedisConfig {
   host: string
   port: number
+  username?: string
   password?: string
   database?: number
 }
@@ -50,6 +51,7 @@ class RedisConnectionManager {
       this.client = new Redis({
         host: config.host,
         port: config.port,
+        username: config.username || undefined,
         password: config.password || undefined,
         db: config.database || 0,
         maxRetriesPerRequest: 1, // Reduced retries for faster failure feedback
@@ -123,6 +125,7 @@ class RedisConnectionManager {
     return (
       this.config.host === config.host &&
       this.config.port === config.port &&
+      this.config.username === config.username &&
       this.config.password === config.password &&
       (this.config.database || 0) === (config.database || 0)
     )
@@ -136,6 +139,7 @@ export function createRedisClient(config: RedisConfig): Redis {
   const client = new Redis({
     host: config.host,
     port: config.port,
+    username: config.username || undefined,
     password: config.password || undefined,
     db: config.database || 0,
     maxRetriesPerRequest: 1,

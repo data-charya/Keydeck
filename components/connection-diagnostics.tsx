@@ -15,6 +15,7 @@ import {
   Network,
   Clock
 } from "lucide-react"
+import React from "react"
 
 interface DiagnosticResult {
   test: string
@@ -24,15 +25,42 @@ interface DiagnosticResult {
 }
 
 interface ConnectionDiagnosticsProps {
-  host: string
-  port: number
+  host?: string
+  port?: number
+  username?: string
   password?: string
   onClose?: () => void
+  allowManualInput?: boolean
 }
 
-export function ConnectionDiagnostics({ host, port, password, onClose }: ConnectionDiagnosticsProps) {
+export function ConnectionDiagnostics({ host, port, username, password, onClose, allowManualInput = false }: ConnectionDiagnosticsProps) {
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([])
   const [isRunning, setIsRunning] = useState(false)
+  const [manualConfig, setManualConfig] = useState({
+    host: host || "localhost",
+    port: port || 6379,
+    username: username || "",
+    password: password || ""
+  })
+
+  // Update manual config when props change
+  React.useEffect(() => {
+    if (host !== undefined || port !== undefined || username !== undefined || password !== undefined) {
+      setManualConfig({
+        host: host || "localhost",
+        port: port || 6379,
+        username: username || "",
+        password: password || ""
+      })
+    }
+  }, [host, port, username, password])
+
+  const currentConfig = {
+    host: host || manualConfig.host,
+    port: port || manualConfig.port,
+    username: username || manualConfig.username,
+    password: password || manualConfig.password
+  }
 
   const runDiagnostics = async () => {
     setIsRunning(true)
@@ -65,14 +93,14 @@ export function ConnectionDiagnostics({ host, port, password, onClose }: Connect
 
     // Test 1: Network Connectivity (Basic TCP connection test)
     try {
-      const response = await fetch(`/api/redis/diagnostics/network?host=${encodeURIComponent(host)}&port=${port}`)
+      const response = await fetch(`/api/redis/diagnostics/network?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
       const result = await response.json()
       
       tests[0] = {
         test: "Network Connectivity",
         status: result.success ? 'success' : 'error',
         message: result.success ? "Network connectivity is working" : "Network connectivity failed",
-        details: result.details || `Successfully reached ${host}:${port}`
+        details: result.details || `Successfully reached ${currentConfig.host}:${currentConfig.port}`
       }
       setDiagnostics([...tests])
     } catch (error) {
@@ -80,7 +108,7 @@ export function ConnectionDiagnostics({ host, port, password, onClose }: Connect
         test: "Network Connectivity",
         status: 'error',
         message: "Network connectivity failed",
-        details: `Cannot reach ${host}:${port}`
+        details: `Cannot reach ${currentConfig.host}:${currentConfig.port}`
       }
       setDiagnostics([...tests])
     }
@@ -89,14 +117,14 @@ export function ConnectionDiagnostics({ host, port, password, onClose }: Connect
 
     // Test 2: Port Availability (Redis-specific connection test)
     try {
-      const response = await fetch(`/api/redis/diagnostics/port?host=${encodeURIComponent(host)}&port=${port}`)
+      const response = await fetch(`/api/redis/diagnostics/port?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
       const result = await response.json()
       
       tests[1] = {
         test: "Port Availability",
         status: result.success ? 'success' : 'error',
         message: result.success ? "Port is accessible" : "Port is not accessible",
-        details: result.details || `Port ${port} is responding`
+        details: result.details || `Port ${currentConfig.port} is responding`
       }
       setDiagnostics([...tests])
     } catch (error) {
@@ -104,7 +132,7 @@ export function ConnectionDiagnostics({ host, port, password, onClose }: Connect
         test: "Port Availability",
         status: 'error',
         message: "Port is not accessible",
-        details: `Port ${port} is not responding. Make sure Redis server is running.`
+        details: `Port ${currentConfig.port} is not responding. Make sure Redis server is running.`
       }
       setDiagnostics([...tests])
     }
@@ -113,7 +141,7 @@ export function ConnectionDiagnostics({ host, port, password, onClose }: Connect
 
     // Test 3: Redis Server Response (PING test)
     try {
-      const response = await fetch(`/api/redis/diagnostics/ping?host=${encodeURIComponent(host)}&port=${port}`)
+      const response = await fetch(`/api/redis/diagnostics/ping?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
       const result = await response.json()
       
       tests[2] = {
@@ -137,7 +165,7 @@ export function ConnectionDiagnostics({ host, port, password, onClose }: Connect
 
     // Test 4: Authentication (if password is provided)
     try {
-      const authUrl = `/api/redis/diagnostics/auth?host=${encodeURIComponent(host)}&port=${port}${password ? `&password=${encodeURIComponent(password)}` : ''}`
+      const authUrl = `/api/redis/diagnostics/auth?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}${currentConfig.username ? `&username=${encodeURIComponent(currentConfig.username)}` : ''}${currentConfig.password ? `&password=${encodeURIComponent(currentConfig.password)}` : ''}`
       const response = await fetch(authUrl)
       const result = await response.json()
       
@@ -198,7 +226,7 @@ export function ConnectionDiagnostics({ host, port, password, onClose }: Connect
           Connection Diagnostics
         </CardTitle>
         <CardDescription>
-          Troubleshooting connection to {host}:{port}
+          Troubleshooting connection to {currentConfig.host}:{currentConfig.port}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
