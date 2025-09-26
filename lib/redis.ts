@@ -256,6 +256,18 @@ export async function getKeyInfo(key: string) {
         value = await client.zrange(key, 0, -1, 'WITHSCORES')
         size = JSON.stringify(value).length
         break
+      case 'ReJSON-RL':
+        // Handle REJSON (RedisJSON) keys
+        try {
+          const jsonValue = await client.call('JSON.GET', key, '.') as string
+          value = jsonValue ? JSON.parse(jsonValue) : null
+          size = jsonValue ? Buffer.byteLength(jsonValue, 'utf8') : 0
+        } catch (jsonError) {
+          // If JSON.GET fails, try to get as string
+          value = await client.get(key)
+          size = value ? Buffer.byteLength(value, 'utf8') : 0
+        }
+        break
       default:
         value = null
     }

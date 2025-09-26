@@ -96,6 +96,9 @@ export function KeyValueViewer({ keyName, onKeyDeleted }: KeyValueViewerProps) {
       case "set":
       case "zset":
         return JSON.stringify(value, null, 2)
+      case "rejson-rl":
+        // REJSON data is already parsed as an object, format it nicely
+        return JSON.stringify(value, null, 2)
       default:
         return String(value)
     }

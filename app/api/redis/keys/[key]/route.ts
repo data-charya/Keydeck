@@ -76,6 +76,17 @@ export async function PUT(request: NextRequest, { params }: { params: { key: str
           }
         }
         break
+      case 'rejson-rl':
+        // Handle REJSON (RedisJSON) keys
+        try {
+          // Parse the JSON value to ensure it's valid
+          const jsonValue = typeof value === 'string' ? JSON.parse(value) : value
+          // Use JSON.SET to update the REJSON key
+          await redisClient.call('JSON.SET', key, '.', JSON.stringify(jsonValue))
+        } catch (jsonError) {
+          throw new Error(`Invalid JSON format: ${jsonError instanceof Error ? jsonError.message : 'Unknown error'}`)
+        }
+        break
       default:
         throw new Error(`Unsupported key type: ${type}`)
     }
