@@ -1,154 +1,284 @@
+<div align="center">
+
+![Redash Logo](public/logo-dark.svg#gh-light-mode-only)
+![Redash Logo](public/logo-white.svg#gh-dark-mode-only)
+
 # Redash
+### Redis management for dummies
 
-A modern, web-based Redis management interface built with Next.js and TypeScript. This application provides a user-friendly way to connect to Redis instances, browse keys, execute commands, and monitor performance.
+A modern, web-based Redis management interface built with Next.js and TypeScript. Connect, browse, and manage your Redis instances with ease.
 
-## Features
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis)](https://redis.io/)
 
-- **Real-time Connection**: Connect to Redis instances with configurable host, port, password, and database settings
-- **Key Browser**: Browse, search, and manage Redis keys with support for all data types (string, hash, list, set, zset)
-- **Redis Console**: Execute Redis commands directly with syntax highlighting and command history
-- **Performance Monitoring**: Real-time statistics including memory usage, hit ratios, and key type distribution
-- **Modern UI**: Clean, responsive interface built with Tailwind CSS and Radix UI components
+</div>
 
-## Getting Started
+---
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 🔌 **Smart Connection Management**
+- **Persistent Connections** - Save and restore connections automatically
+- **Secure Storage** - Encrypted credential storage with Web Crypto API
+- **Connection Diagnostics** - Built-in troubleshooting tools
+- **Multiple Databases** - Switch between Redis databases seamlessly
+
+</td>
+<td width="50%">
+
+### 🔍 **Advanced Key Browser**
+- **Real-time Search** - Find keys instantly with live filtering
+- **Type Support** - All Redis data types (String, Hash, List, Set, ZSet)
+- **Visual Indicators** - Color-coded type badges and metadata
+- **Bulk Operations** - Copy, delete, and manage keys efficiently
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 💻 **Redis Console**
+- **Command History** - Navigate through previous commands
+- **Auto-completion** - Smart suggestions for Redis commands
+- **Syntax Highlighting** - Beautiful command formatting
+- **Error Handling** - Clear error messages and debugging
+
+</td>
+<td width="50%">
+
+### 📊 **Performance Monitoring**
+- **Real-time Stats** - Live memory usage and performance metrics
+- **Interactive Charts** - Visualize Redis performance over time
+- **Hit Ratio Tracking** - Monitor cache efficiency
+- **Key Distribution** - Understand your data structure
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ 
-- Redis server running locally or remotely
-- npm or pnpm package manager
+- **Node.js** 18+ 
+- **Redis** server (local or remote)
+- **npm** or **pnpm**
 
 ### Installation
 
-1. Clone the repository:
 ```bash
+# Clone the repository
 git clone <repository-url>
 cd redis-gui
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
 # or
 pnpm install
-```
 
-3. Start the development server:
-```bash
+# Start development server
 npm run dev
 # or
 pnpm dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+Open [http://localhost:3000](http://localhost:3000) in your browser 🎉
 
-### Connecting to Redis
+---
 
-1. On the connection screen, enter your Redis connection details:
-   - **Host**: Redis server hostname (default: localhost)
-   - **Port**: Redis server port (default: 6379)
-   - **Password**: Redis password (optional)
-   - **Database**: Redis database number (default: 0)
+## 🔧 Usage
 
-2. Click "Connect to Redis" to establish the connection
+### 1. **Connect to Redis**
+Enter your Redis connection details:
+- **Host**: `localhost` (or your Redis server)
+- **Port**: `6379` (default Redis port)
+- **Password**: Optional authentication
+- **Database**: `0` (default database)
 
-## Usage
+### 2. **Browse Your Data**
+- **Search keys** with real-time filtering
+- **Click any key** to view and edit its value
+- **See metadata** like TTL, size, and type
+- **Manage keys** with copy/delete actions
 
-### Key Browser
-- View all keys in your Redis database
-- Search and filter keys by name
-- Click on any key to view its details and value
-- Edit key values directly in the interface
-- Delete keys with confirmation
+### 3. **Execute Commands**
+- **Type Redis commands** directly in the console
+- **Use arrow keys** to navigate command history
+- **Get instant feedback** with formatted responses
 
-### Redis Console
-- Execute Redis commands directly
-- Command history with arrow key navigation
-- Auto-completion for common Redis commands
-- Copy commands and responses to clipboard
+### 4. **Monitor Performance**
+- **View real-time stats** in the dashboard
+- **Track memory usage** and hit ratios
+- **Analyze key distribution** by type
 
-### Dashboard Overview
-- Real-time Redis server statistics
-- Memory usage and performance metrics
-- Key type distribution charts
-- Hit/miss ratio monitoring
+---
 
-## Supported Redis Commands
+## 🎯 Supported Redis Commands
 
-The console supports most common Redis commands including:
+<details>
+<summary><strong>Click to expand supported commands</strong></summary>
 
-- **String operations**: GET, SET, DEL, EXISTS, TYPE, TTL, EXPIRE
-- **Hash operations**: HGET, HSET, HGETALL, HDEL
-- **List operations**: LPUSH, RPUSH, LRANGE, LLEN
-- **Set operations**: SADD, SMEMBERS, SCARD
-- **Sorted Set operations**: ZADD, ZRANGE, ZCARD
-- **Server commands**: PING, INFO, DBSIZE, KEYS, FLUSHDB, FLUSHALL
+### String Operations
+- `GET`, `SET`, `DEL`, `EXISTS`, `TYPE`, `TTL`, `EXPIRE`
 
-## Data Types
+### Hash Operations  
+- `HGET`, `HSET`, `HGETALL`, `HDEL`, `HKEYS`, `HVALS`
 
-The application supports all Redis data types:
+### List Operations
+- `LPUSH`, `RPUSH`, `LPOP`, `RPOP`, `LLEN`, `LRANGE`
 
-- **String**: Simple key-value pairs
-- **Hash**: Field-value mappings
-- **List**: Ordered collections of strings
-- **Set**: Unordered collections of unique strings
-- **Sorted Set**: Sets with associated scores
+### Set Operations
+- `SADD`, `SREM`, `SMEMBERS`, `SCARD`, `SISMEMBER`
 
-## Security Considerations
+### Sorted Set Operations
+- `ZADD`, `ZREM`, `ZRANGE`, `ZCARD`, `ZSCORE`
 
-- Connection credentials are stored in browser session storage
-- No credentials are permanently stored on the server
-- Always use secure connections (Redis AUTH) in production environments
-- Consider using Redis ACLs for fine-grained access control
+### Server Commands
+- `PING`, `INFO`, `DBSIZE`, `KEYS`, `FLUSHDB`, `FLUSHALL`
 
-## Development
+</details>
 
-### Project Structure
+---
+
+## 🏗️ Project Structure
 
 ```
-├── app/                    # Next.js app directory
-│   ├── api/redis/         # API routes for Redis operations
-│   ├── globals.css        # Global styles
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Main application page
-├── components/            # React components
-│   ├── ui/               # Reusable UI components
-│   ├── connection-config.tsx
-│   ├── dashboard-overview.tsx
-│   ├── key-browser.tsx
-│   ├── key-value-viewer.tsx
-│   └── redis-console.tsx
-├── hooks/                # Custom React hooks
-├── lib/                  # Utility functions
-│   ├── redis.ts          # Redis client management
-│   └── utils.ts          # General utilities
-└── styles/               # Additional styles
+redis-gui/
+├── 📁 app/                    # Next.js App Router
+│   ├── 📁 api/redis/         # Redis API endpoints
+│   ├── 🎨 globals.css        # Global styles
+│   ├── 📄 layout.tsx         # Root layout
+│   └── 📄 page.tsx           # Main application
+├── 📁 components/            # React components
+│   ├── 📁 ui/               # Reusable UI components
+│   ├── 🔌 connection-config.tsx
+│   ├── 📊 dashboard-overview.tsx
+│   ├── 🔍 key-browser.tsx
+│   ├── 👁️ key-value-viewer.tsx
+│   └── 💻 redis-console.tsx
+├── 📁 hooks/                # Custom React hooks
+├── 📁 lib/                  # Utility functions
+│   ├── 🔐 crypto.ts         # Encryption utilities
+│   ├── 🔗 redis.ts          # Redis client management
+│   └── 🛠️ utils.ts          # General utilities
+└── 📁 public/               # Static assets
+    ├── 🖼️ logo-dark.svg
+    └── 🖼️ logo-white.svg
 ```
 
-### Key Technologies
+---
 
-- **Next.js 14**: React framework with App Router
-- **TypeScript**: Type-safe JavaScript
-- **Tailwind CSS**: Utility-first CSS framework
-- **Radix UI**: Accessible component primitives
-- **ioredis**: Redis client for Node.js
-- **Lucide React**: Icon library
+## 🛡️ Security Features
 
-## Contributing
+- **🔐 Encrypted Storage** - Connection credentials encrypted with Web Crypto API
+- **🔒 Secure Context** - Requires HTTPS or localhost for full encryption
+- **💾 Fallback Storage** - Graceful degradation to base64 encoding
+- **🚫 No Server Storage** - Credentials never stored on the server
+- **🔄 Session Management** - Automatic connection cleanup
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+---
 
-## License
+## 🎨 Tech Stack
 
-This project is open source and available under the [MIT License](LICENSE).
+<table>
+<tr>
+<td align="center" width="20%">
 
-## Support
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)
+**Next.js 14**
+App Router & SSR
 
-For issues and questions:
-1. Check the existing issues on GitHub
-2. Create a new issue with detailed information
-3. Include Redis version and error messages when reporting bugs
+</td>
+<td align="center" width="20%">
+
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
+**TypeScript**
+Type Safety
+
+</td>
+<td align="center" width="20%">
+
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38B2AC?style=flat-square&logo=tailwind-css)
+**Tailwind CSS**
+Utility-first styling
+
+</td>
+<td align="center" width="20%">
+
+![Radix UI](https://img.shields.io/badge/Radix_UI-Primitives-161618?style=flat-square)
+**Radix UI**
+Accessible components
+
+</td>
+<td align="center" width="20%">
+
+![ioredis](https://img.shields.io/badge/ioredis-5-2C3E50?style=flat-square)
+**ioredis**
+Redis client
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+1. **🍴 Fork** the repository
+2. **🌿 Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **💾 Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **📤 Push** to the branch (`git push origin feature/amazing-feature`)
+5. **🔀 Open** a Pull Request
+
+### Development Guidelines
+
+- Follow TypeScript best practices
+- Use Tailwind CSS for styling
+- Add proper error handling
+- Include helpful comments
+- Test your changes thoroughly
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🆘 Support
+
+Need help? Here's where to find it:
+
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/your-repo/issues)
+- **💡 Feature Requests**: [GitHub Discussions](https://github.com/your-repo/discussions)
+- **📖 Documentation**: This README and inline code comments
+- **💬 Questions**: Open a GitHub issue with the `question` label
+
+### Reporting Issues
+
+When reporting bugs, please include:
+- **Redis version** and configuration
+- **Browser** and version
+- **Error messages** and stack traces
+- **Steps to reproduce** the issue
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the Redis community**
+
+[⭐ Star this repo](https://github.com/your-repo) • [🐛 Report Bug](https://github.com/your-repo/issues) • [💡 Request Feature](https://github.com/your-repo/issues)
+
+</div>
