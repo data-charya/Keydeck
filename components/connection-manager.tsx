@@ -16,6 +16,12 @@ import {
   DialogTrigger 
 } from "@/components/ui/dialog"
 import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from "@/components/ui/tooltip"
+import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
@@ -30,7 +36,8 @@ import {
   Check, 
   X, 
   Clock,
-  Server
+  Server,
+  Activity
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -221,10 +228,24 @@ export function ConnectionManager({
                         ) : (
                           <div>
                             <h3 className="font-medium truncate">{connection.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {connection.host}:{connection.port}
-                              {connection.database && connection.database !== 0 && ` (db${connection.database})`}
-                            </p>
+                            <div className="text-sm text-muted-foreground">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="truncate block">
+                                      {connection.host}:{connection.port}
+                                      {connection.database && connection.database !== 0 && ` (db${connection.database})`}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-md">
+                                    <div className="font-mono text-xs break-all">
+                                      {connection.host}:{connection.port}
+                                      {connection.database && connection.database !== 0 && ` (db${connection.database})`}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -242,35 +263,67 @@ export function ConnectionManager({
                         {formatLastConnected(connection.lastConnected)}
                       </div>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {activeConnectionId !== connection.id && (
-                            <DropdownMenuItem onClick={() => handleSwitchConnection(connection.id)}>
-                              Connect
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => startEditing(connection)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Rename
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => startEditingConnection(connection)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Connection
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteConnection(connection.id)}
-                            className="text-destructive"
+                      <div className="relative">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 hover:bg-muted"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            // Toggle dropdown visibility
+                            const dropdown = e.currentTarget.nextElementSibling as HTMLElement
+                            if (dropdown) {
+                              dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block'
+                            }
+                          }}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                        <div 
+                          className="absolute right-0 top-8 bg-white dark:bg-gray-800 border shadow-lg z-[9999] min-w-[160px] rounded-md hidden"
+                          style={{ display: 'none' }}
+                        >
+                          <div 
+                            className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-nowrap cursor-pointer flex items-center gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onConnect(connection)
+                              // Hide dropdown
+                              const dropdown = e.currentTarget.parentElement as HTMLElement
+                              if (dropdown) dropdown.style.display = 'none'
+                            }}
                           >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            <Activity className="w-4 h-4" />
+                            Test Connection
+                          </div>
+                          <div 
+                            className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-nowrap cursor-pointer flex items-center gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              startEditingConnection(connection)
+                              // Hide dropdown
+                              const dropdown = e.currentTarget.parentElement as HTMLElement
+                              if (dropdown) dropdown.style.display = 'none'
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                            Edit Connection
+                          </div>
+                          <div 
+                            className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-nowrap cursor-pointer flex items-center gap-2 text-red-600 dark:text-red-400"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteConnection(connection.id)
+                              // Hide dropdown
+                              const dropdown = e.currentTarget.parentElement as HTMLElement
+                              if (dropdown) dropdown.style.display = 'none'
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Connection
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

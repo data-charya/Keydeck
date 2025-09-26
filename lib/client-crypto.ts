@@ -29,7 +29,6 @@ export function getSecureStorage() {
   // Start loading the crypto module
   storagePromise = import('./crypto').then(({ secureStorage }) => {
     secureStorageInstance = secureStorage
-    console.log('Secure storage initialized successfully')
     return secureStorage
   }).catch((error) => {
     console.error('Failed to initialize secure storage:', error)

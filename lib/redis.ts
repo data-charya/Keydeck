@@ -23,7 +23,6 @@ class RedisConnectionManager {
         await this.client.ping()
         return this.client
       } catch (error) {
-        console.log('Connection lost, reconnecting...')
         await this.disconnect()
       }
     }
@@ -69,15 +68,12 @@ class RedisConnectionManager {
       })
 
       this.client.on('connect', () => {
-        console.log('Redis client connected')
       })
 
       this.client.on('ready', () => {
-        console.log('Redis client ready')
       })
 
       this.client.on('close', () => {
-        console.log('Redis client connection closed')
       })
 
       // Test the connection
@@ -102,7 +98,7 @@ class RedisConnectionManager {
       try {
         await this.client.quit()
       } catch (error) {
-        console.error('Error disconnecting Redis client:', error)
+        console.error('Redis Connection Manager: Error disconnecting Redis client:', error)
       }
       this.client = null
     }
@@ -196,7 +192,6 @@ export async function executeRedisCommand<T = any>(
     if (error instanceof Error && error.message.includes('Connection is closed')) {
       const config = connectionManager.getConfig()
       if (config) {
-        console.log('Connection lost, attempting to reconnect...')
         try {
           await connectionManager.connect(config)
           const newClient = connectionManager.getClient()

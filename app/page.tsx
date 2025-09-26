@@ -16,6 +16,7 @@ import { DashboardOverview } from "@/components/dashboard-overview"
 import { PerformanceCharts } from "@/components/performance-charts"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useRedisConnection } from "@/hooks/use-redis-connection"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function RedisGUI() {
   const {
@@ -66,9 +67,6 @@ export default function RedisGUI() {
                   >
                     {connection.name}
                   </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {connection.host}:{connection.port}
-                  </span>
                 </div>
               )}
               {!isConnected && (
@@ -281,7 +279,23 @@ export default function RedisGUI() {
                           </div>
                           <div className="text-sm text-muted-foreground space-y-1">
                             <p>Name: {connection?.name}</p>
-                            <p>Host: {connection?.host}</p>
+                            <div className="flex items-center gap-1">
+                              <span>Host:</span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="truncate max-w-[200px] font-mono">
+                                      {connection?.host}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-md">
+                                    <div className="font-mono text-xs break-all">
+                                      {connection?.host}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                             <p>Port: {connection?.port}</p>
                             <p>Database: {connection?.database || 0}</p>
                           </div>

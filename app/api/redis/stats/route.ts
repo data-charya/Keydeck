@@ -8,8 +8,6 @@ export async function GET() {
       return NextResponse.json({ error: "Redis client not connected" }, { status: 400 })
     }
 
-    console.log("Fetching Redis statistics")
-
     // Get Redis server info
     const info = await getRedisInfo()
     

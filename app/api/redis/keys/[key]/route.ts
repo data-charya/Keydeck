@@ -10,8 +10,6 @@ export async function GET(request: NextRequest, { params }: { params: { key: str
       return NextResponse.json({ error: "Redis client not connected" }, { status: 400 })
     }
 
-    console.log("Fetching details for key:", key)
-
     const keyDetails = await getKeyInfo(key)
 
     if (!keyDetails) {
@@ -20,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: { key: str
 
     return NextResponse.json(keyDetails)
   } catch (error) {
-    console.error("Error fetching key details:", error)
+    console.error("Key Details API: Error fetching key details:", error)
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : "Failed to fetch key details" 
     }, { status: 500 })
@@ -36,8 +34,6 @@ export async function PUT(request: NextRequest, { params }: { params: { key: str
     if (!redisClient) {
       return NextResponse.json({ error: "Redis client not connected" }, { status: 400 })
     }
-
-    console.log("Updating key:", key, "with value:", value)
 
     // Update the key based on its type
     switch (type.toLowerCase()) {
@@ -89,7 +85,7 @@ export async function PUT(request: NextRequest, { params }: { params: { key: str
       message: "Key updated successfully",
     })
   } catch (error) {
-    console.error("Error updating key:", error)
+    console.error("Key Update API: Error updating key:", error)
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : "Failed to update key" 
     }, { status: 500 })
@@ -105,8 +101,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { key: 
       return NextResponse.json({ error: "Redis client not connected" }, { status: 400 })
     }
 
-    console.log("Deleting key:", key)
-
     const result = await redisClient.del(key)
 
     if (result === 0) {
@@ -118,7 +112,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { key: 
       message: "Key deleted successfully",
     })
   } catch (error) {
-    console.error("Error deleting key:", error)
+    console.error("Key Delete API: Error deleting key:", error)
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : "Failed to delete key" 
     }, { status: 500 })

@@ -90,7 +90,6 @@ export function RedisConsole() {
     const startTime = Date.now()
 
     try {
-      console.log("Executing command:", trimmedCommand)
       
       const response = await fetch("/api/redis/execute", {
         method: "POST",
@@ -100,10 +99,7 @@ export function RedisConsole() {
         body: JSON.stringify({ command: trimmedCommand }),
       })
 
-      console.log("Response status:", response.status)
-      const data = await response.json()
-      console.log("Response data:", data)
-      
+      const data = await response.json()      
       const executionTime = Date.now() - startTime
 
       const entry: ConsoleEntry = {

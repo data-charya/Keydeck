@@ -6,26 +6,20 @@ export async function POST(request: NextRequest) {
   
   try {
     const { command } = await request.json()
-    console.log("API: Received command:", command)
 
     if (!command || typeof command !== "string") {
-      console.log("API: Invalid command format")
       return NextResponse.json({ error: "Command is required" }, { status: 400 })
     }
 
     const redisClient = getRedisClient()
-    console.log("API: Redis client status:", redisClient ? "connected" : "not connected")
     
     if (!redisClient) {
-      console.log("API: No Redis client available")
       return NextResponse.json({ error: "Redis client not connected" }, { status: 400 })
     }
 
     trimmedCommand = command.trim()
     const parts = trimmedCommand.split(/\s+/)
     const cmd = parts[0].toUpperCase()
-
-    console.log("Executing Redis command:", command)
 
     let result: any
 
@@ -302,7 +296,7 @@ export async function POST(request: NextRequest) {
       throw new Error(`Redis command failed: ${redisError instanceof Error ? redisError.message : 'Unknown error'}`)
     }
   } catch (error) {
-    console.error("Redis command execution error:", error)
+    console.error("Execute API: Redis command execution error:", error)
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Command execution failed",
