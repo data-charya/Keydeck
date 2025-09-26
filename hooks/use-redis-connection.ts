@@ -30,12 +30,9 @@ export function useRedisConnection() {
   useEffect(() => {
     const loadConnections = async () => {
       try {
-        console.log("Loading connections from secure storage...")
         const secureStorage = await getSecureStorage()
-        console.log("Secure storage loaded:", secureStorage)
         
         const manager = await secureStorage.getItem(STORAGE_KEY) as ConnectionManager | null
-        console.log("Retrieved connection manager:", manager)
         
         if (manager) {
           setConnectionManager(manager)
@@ -46,18 +43,15 @@ export function useRedisConnection() {
               (conn: RedisConnection) => conn.id === manager.activeConnectionId
             )
             if (activeConnection) {
-              console.log("Found active connection to restore:", activeConnection.name)
               restoreConnection(activeConnection)
             }
           }
         } else {
           // Try fallback storage
-          console.log("No encrypted connections found, trying fallback storage...")
           const fallbackData = localStorage.getItem(FALLBACK_STORAGE_KEY)
           if (fallbackData) {
             try {
               const fallbackManager = JSON.parse(fallbackData) as ConnectionManager
-              console.log("Found fallback connections:", fallbackManager)
               setConnectionManager(fallbackManager)
               
               if (fallbackManager.activeConnectionId) {
@@ -65,26 +59,21 @@ export function useRedisConnection() {
                   (conn: RedisConnection) => conn.id === fallbackManager.activeConnectionId
                 )
                 if (activeConnection) {
-                  console.log("Found fallback active connection to restore:", activeConnection.name)
                   restoreConnection(activeConnection)
                 }
               }
             } catch (fallbackError) {
-              console.error("Failed to parse fallback data:", fallbackError)
               localStorage.removeItem(FALLBACK_STORAGE_KEY)
             }
           } else {
-            console.log("No saved connections found")
           }
         }
       } catch (error) {
-        console.error("Failed to load connections from secure storage:", error)
         // If decryption fails, clear corrupted data
         try {
           const secureStorage = await getSecureStorage()
           secureStorage.removeItem(STORAGE_KEY)
         } catch (clearError) {
-          console.error("Failed to clear corrupted data:", clearError)
         }
       }
     }
@@ -96,10 +85,8 @@ export function useRedisConnection() {
   useEffect(() => {
     const saveConnections = async () => {
       try {
-        console.log("Saving connections to secure storage:", connectionManager)
         const secureStorage = await getSecureStorage()
         await secureStorage.setItem(STORAGE_KEY, connectionManager)
-        console.log("Connections saved successfully")
         
         // Also save to fallback storage as backup
         localStorage.setItem(FALLBACK_STORAGE_KEY, JSON.stringify(connectionManager))
@@ -108,7 +95,6 @@ export function useRedisConnection() {
         // Fallback to localStorage
         try {
           localStorage.setItem(FALLBACK_STORAGE_KEY, JSON.stringify(connectionManager))
-          console.log("Connections saved to fallback storage")
         } catch (fallbackError) {
           console.error("Failed to save to fallback storage:", fallbackError)
         }
@@ -129,7 +115,6 @@ export function useRedisConnection() {
 
   const connect = useCallback(async (config: RedisConfig, connectionName?: string) => {
     try {
-      console.log("Connecting to Redis:", config)
       
       // Test the connection
       const response = await fetch("/api/redis/connect", {
@@ -140,7 +125,6 @@ export function useRedisConnection() {
         body: JSON.stringify(config),
       })
 
-      console.log("Connect response status:", response.status)
 
       if (!response.ok) {
         const error = await response.text()
@@ -149,7 +133,6 @@ export function useRedisConnection() {
       }
 
       const result = await response.json()
-      console.log("Connect result:", result)
 
       // Create connection object
       const connectionId = `${config.host}:${config.port}:${config.database || 0}`
@@ -239,12 +222,19 @@ export function useRedisConnection() {
     }))
   }, [])
 
+  const updateConnection = useCallback((connectionId: string, updatedConfig: Partial<RedisConnection>) => {
+    setConnectionManager(prev => ({
+      ...prev,
+      connections: prev.connections.map(conn =>
+        conn.id === connectionId ? { ...conn, ...updatedConfig } : conn
+      ),
+    }))
+  }, [])
+
   // Try to restore connection from stored connections
   const restoreConnection = useCallback(async (connection: RedisConnection) => {
     try {
-      console.log("Restoring connection:", connection.name)
       await connect(connection, connection.name)
-      console.log("Connection restored successfully")
     } catch (error) {
       console.error("Failed to restore Redis connection:", error)
       // Mark connection as disconnected
@@ -269,6 +259,7 @@ export function useRedisConnection() {
     switchConnection,
     deleteConnection,
     updateConnectionName,
+    updateConnection,
     restoreConnection,
   }
 }

@@ -98,10 +98,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser 🎉
 
 ### 1. **Connect to Redis**
 Enter your Redis connection details:
-- **Host**: `localhost` (or your Redis server)
+- **Host**: Your Redis server's public IP or domain name
 - **Port**: `6379` (default Redis port)
 - **Password**: Optional authentication
 - **Database**: `0` (default database)
+
+> **⚠️ Important:** Deployed versions can only connect to **remote Redis servers** accessible from the internet. Local Redis connections are blocked by browser security policies.
 
 ### 2. **Browse Your Data**
 - **Search keys** with real-time filtering
@@ -172,6 +174,37 @@ redis-gui/
 └── 📁 public/               # Static assets
     ├── 🖼️ logo-dark.svg
     └── 🖼️ logo-white.svg
+```
+
+---
+
+## 🚀 Deployment Options
+
+### **Option 1: Remote Redis Server**
+- Deploy your Redis server to a cloud provider (AWS, DigitalOcean, etc.)
+- Make it accessible from the internet
+- Use the public IP/domain in the deployed app
+
+### **Option 2: Self-Hosted Application**
+- Run this app locally on your machine
+- Connect to local Redis instances
+- Perfect for development and local testing
+
+### **Option 3: Docker Compose**
+```yaml
+version: '3.8'
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  
+  redis-gui:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - REDIS_HOST=redis
 ```
 
 ---

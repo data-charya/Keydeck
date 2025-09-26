@@ -52,6 +52,7 @@ interface ConnectionManagerProps {
   onSwitchConnection: (connectionId: string) => Promise<void>
   onDeleteConnection: (connectionId: string) => void
   onUpdateConnectionName: (connectionId: string, newName: string) => void
+  onUpdateConnection: (connectionId: string, updatedConfig: Partial<RedisConnection>) => void
 }
 
 export function ConnectionManager({
@@ -61,10 +62,13 @@ export function ConnectionManager({
   onSwitchConnection,
   onDeleteConnection,
   onUpdateConnectionName,
+  onUpdateConnection,
 }: ConnectionManagerProps) {
   const [isAddingConnection, setIsAddingConnection] = useState(false)
   const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
+  const [isEditingConnection, setIsEditingConnection] = useState(false)
+  const [editingConnection, setEditingConnection] = useState<RedisConnection | null>(null)
   const { toast } = useToast()
 
   const handleAddConnection = async (config: any, name?: string) => {
@@ -129,6 +133,28 @@ export function ConnectionManager({
   const cancelEdit = () => {
     setEditingConnectionId(null)
     setEditingName("")
+  }
+
+  const startEditingConnection = (connection: RedisConnection) => {
+    setEditingConnection(connection)
+    setIsEditingConnection(true)
+  }
+
+  const saveConnectionEdit = (updatedConfig: Partial<RedisConnection>) => {
+    if (editingConnection) {
+      onUpdateConnection(editingConnection.id, updatedConfig)
+      setIsEditingConnection(false)
+      setEditingConnection(null)
+      toast({
+        title: "Connection updated",
+        description: "Connection details updated successfully",
+      })
+    }
+  }
+
+  const cancelConnectionEdit = () => {
+    setIsEditingConnection(false)
+    setEditingConnection(null)
   }
 
   const formatLastConnected = (date?: Date) => {
@@ -232,6 +258,10 @@ export function ConnectionManager({
                             <Edit className="w-4 h-4 mr-2" />
                             Rename
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => startEditingConnection(connection)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Connection
+                          </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleDeleteConnection(connection.id)}
                             className="text-destructive"
@@ -248,6 +278,25 @@ export function ConnectionManager({
             </div>
           </ScrollArea>
         )}
+
+        {/* Edit Connection Dialog */}
+        <Dialog open={isEditingConnection} onOpenChange={setIsEditingConnection}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Connection</DialogTitle>
+              <DialogDescription>
+                Update the connection details for {editingConnection?.name}
+              </DialogDescription>
+            </DialogHeader>
+            {editingConnection && (
+              <EditConnectionForm
+                connection={editingConnection}
+                onSave={saveConnectionEdit}
+                onCancel={cancelConnectionEdit}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   )
@@ -347,6 +396,91 @@ function ConnectionForm({
         </Button>
         <Button onClick={handleSubmit} disabled={isConnecting || !config.host}>
           {isConnecting ? "Connecting..." : "Connect"}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// Edit connection form component
+function EditConnectionForm({
+  connection,
+  onSave,
+  onCancel
+}: {
+  connection: RedisConnection
+  onSave: (config: Partial<RedisConnection>) => void
+  onCancel: () => void
+}) {
+  const [config, setConfig] = useState({
+    name: connection.name,
+    host: connection.host,
+    port: connection.port,
+    password: connection.password || "",
+    database: connection.database || 0,
+  })
+
+  const handleSubmit = () => {
+    onSave(config)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Connection Name</label>
+        <Input
+          value={config.name}
+          onChange={(e) => setConfig({ ...config, name: e.target.value })}
+          placeholder="My Redis Server"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Host</label>
+          <Input
+            value={config.host}
+            onChange={(e) => setConfig({ ...config, host: e.target.value })}
+            placeholder="your-redis-server.com or 1.2.3.4"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Port</label>
+          <Input
+            type="number"
+            value={config.port}
+            onChange={(e) => setConfig({ ...config, port: Number.parseInt(e.target.value) || 6379 })}
+            placeholder="6379"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Password (optional)</label>
+        <Input
+          type="password"
+          value={config.password}
+          onChange={(e) => setConfig({ ...config, password: e.target.value })}
+          placeholder="Enter password if required"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Database (optional)</label>
+        <Input
+          type="number"
+          value={config.database}
+          onChange={(e) => setConfig({ ...config, database: Number.parseInt(e.target.value) || 0 })}
+          placeholder="0"
+        />
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} disabled={!config.host || !config.name}>
+          Save Changes
         </Button>
       </div>
     </div>

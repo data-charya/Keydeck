@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Database } from "lucide-react"
+import { Loader2, Database, AlertCircle, Info } from "lucide-react"
 
 interface ConnectionConfigProps {
   onConnect: (config: RedisConfig, connectionName?: string) => Promise<void>
@@ -53,6 +53,22 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
         <CardDescription>Enter your Redis connection details</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Connection Help Alert */}
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <p className="font-medium">Connection Requirements</p>
+              <div className="text-sm space-y-1">
+                <p>• <strong>Remote Redis Only:</strong> This app can only connect to Redis servers accessible from the internet</p>
+                <p>• <strong>Public IP/Domain:</strong> Use your Redis server's public IP or domain name</p>
+                <p>• <strong>Local Redis:</strong> Not supported - browsers block local network access for security</p>
+                <p>• <strong>Self-hosted:</strong> Run this app locally to connect to local Redis instances</p>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+
         <div className="space-y-2">
           <Label htmlFor="connectionName">Connection Name (optional)</Label>
           <Input
@@ -70,7 +86,7 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
               id="host"
               value={config.host}
               onChange={(e) => setConfig({ ...config, host: e.target.value })}
-              placeholder="localhost"
+              placeholder="your-redis-server.com or 1.2.3.4"
             />
           </div>
           <div className="space-y-2">
