@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Terminal, Send, Trash2, Copy, Clock, CheckCircle, XCircle, Info } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { getDetailedErrorInfo } from "@/lib/error-translator"
 import { useRedisConnection } from "@/hooks/use-redis-connection"
 
 interface ConsoleEntry {
@@ -129,10 +130,13 @@ export function RedisConsole() {
     } catch (error) {
       console.error("Console execution error:", error)
       const executionTime = Date.now() - startTime
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+      const detailedError = getDetailedErrorInfo(errorMessage)
+      
       const entry: ConsoleEntry = {
         id: Date.now().toString(),
         command: trimmedCommand,
-        response: error instanceof Error ? error.message : "Unknown error occurred",
+        response: detailedError.message,
         timestamp: new Date(),
         status: "error",
         executionTime,
@@ -141,8 +145,8 @@ export function RedisConsole() {
       setHistory((prev) => [...prev, entry])
       
       toast({
-        title: "Connection Error",
-        description: "Failed to execute command. Make sure you're connected to Redis.",
+        title: detailedError.title,
+        description: detailedError.message,
         variant: "destructive",
       })
     } finally {

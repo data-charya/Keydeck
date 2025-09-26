@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Database, AlertCircle, Info } from "lucide-react"
+import { getDetailedErrorInfo } from "@/lib/error-translator"
 
 interface ConnectionConfigProps {
   onConnect: (config: RedisConfig, connectionName?: string) => Promise<void>
@@ -29,15 +30,20 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
   const [connectionName, setConnectionName] = useState("")
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [detailedError, setDetailedError] = useState<any>(null)
 
   const handleConnect = async () => {
     setIsConnecting(true)
     setError(null)
+    setDetailedError(null)
 
     try {
       await onConnect(config, connectionName || undefined)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to connect to Redis")
+      const errorMessage = err instanceof Error ? err.message : "Failed to connect to Redis"
+      const detailed = getDetailedErrorInfo(errorMessage)
+      setError(detailed.message)
+      setDetailedError(detailed)
     } finally {
       setIsConnecting(false)
     }
@@ -125,23 +131,39 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
 
         {error && (
           <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <div className="space-y-2">
-                <p className="font-medium">{error}</p>
-                <div className="text-sm space-y-1">
-                  <p className="font-medium">Troubleshooting steps:</p>
-                  <ul className="list-disc list-inside space-y-1 text-xs">
-                    <li>Make sure Redis server is running</li>
-                    <li>Check if the host and port are correct</li>
-                    <li>Verify network connectivity</li>
-                    <li>Check if Redis requires authentication</li>
-                  </ul>
-                  <div className="mt-2 p-2 bg-muted rounded text-xs">
-                    <p className="font-medium">Quick test:</p>
-                    <p>Run <code className="bg-background px-1 rounded">redis-cli ping</code> in terminal</p>
-                    <p>Should return: <code className="bg-background px-1 rounded">PONG</code></p>
-                  </div>
+              <div className="space-y-3">
+                <div>
+                  <p className="font-semibold text-sm">{detailedError?.title || "Connection Error"}</p>
+                  <p className="text-sm mt-1">{error}</p>
                 </div>
+                
+                {detailedError?.suggestions && (
+                  <div className="text-sm space-y-2">
+                    <p className="font-medium">Try these solutions:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      {detailedError.suggestions.map((suggestion: string, index: number) => (
+                        <li key={index}>{suggestion}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="mt-3 p-2 bg-muted rounded text-xs">
+                  <p className="font-medium">Quick test:</p>
+                  <p>Run <code className="bg-background px-1 rounded">redis-cli -h {config.host} -p {config.port} ping</code> in terminal</p>
+                  <p>Should return: <code className="bg-background px-1 rounded">PONG</code></p>
+                </div>
+
+                {detailedError?.technicalDetails && (
+                  <details className="mt-2">
+                    <summary className="text-xs cursor-pointer hover:text-foreground">Show technical details</summary>
+                    <p className="text-xs mt-1 font-mono bg-muted p-2 rounded break-all">
+                      {detailedError.technicalDetails}
+                    </p>
+                  </details>
+                )}
               </div>
             </AlertDescription>
           </Alert>

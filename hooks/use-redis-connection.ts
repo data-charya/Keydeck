@@ -127,9 +127,9 @@ export function useRedisConnection() {
 
 
       if (!response.ok) {
-        const error = await response.text()
-        console.error("Connect failed:", error)
-        throw new Error(error || "Failed to connect to Redis")
+        const errorData = await response.json().catch(() => ({ error: "Failed to connect to Redis" }))
+        console.error("Connect failed:", errorData)
+        throw new Error(errorData.error || "Failed to connect to Redis")
       }
 
       const result = await response.json()
