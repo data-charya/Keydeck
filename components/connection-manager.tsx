@@ -227,12 +227,12 @@ export function ConnectionManager({
                           </div>
                         ) : (
                           <div>
-                            <h3 className="font-medium truncate">{connection.name}</h3>
+                            <h3 className="font-medium truncate max-w-[250px]">{connection.name}</h3>
                             <div className="text-sm text-muted-foreground">
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="truncate block">
+                                    <span className="truncate block max-w-[250px]">
                                       {connection.host}:{connection.port}
                                       {connection.database && connection.database !== 0 && ` (db${connection.database})`}
                                     </span>
@@ -280,7 +280,7 @@ export function ConnectionManager({
                           <MoreVertical className="w-4 h-4" />
                         </Button>
                         <div 
-                          className="absolute right-0 top-8 bg-white dark:bg-gray-800 border shadow-lg z-[9999] min-w-[160px] rounded-md hidden"
+                          className="absolute right-0 top-8 bg-white dark:bg-muted border shadow-lg z-[9999] min-w-[160px] rounded-md hidden"
                           style={{ display: 'none' }}
                         >
                           <div 
