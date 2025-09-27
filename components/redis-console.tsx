@@ -24,41 +24,70 @@ interface ConsoleEntry {
 }
 
 const REDIS_COMMANDS = [
-  "GET",
-  "SET",
-  "DEL",
-  "EXISTS",
-  "KEYS",
-  "TYPE",
-  "TTL",
-  "EXPIRE",
-  "HGET",
-  "HSET",
-  "HGETALL",
-  "HDEL",
-  "HKEYS",
-  "HVALS",
-  "LPUSH",
-  "RPUSH",
-  "LPOP",
-  "RPOP",
-  "LLEN",
-  "LRANGE",
-  "SADD",
-  "SREM",
-  "SMEMBERS",
-  "SCARD",
-  "SISMEMBER",
-  "ZADD",
-  "ZREM",
-  "ZRANGE",
-  "ZCARD",
-  "ZSCORE",
-  "PING",
-  "INFO",
-  "FLUSHDB",
-  "FLUSHALL",
-  "DBSIZE",
+  // String commands
+  "GET", "SET", "MSET", "MGET", "GETSET", "APPEND", "STRLEN", "INCR", "DECR", "INCRBY", "DECRBY",
+  "INCRBYFLOAT", "SETNX", "SETEX", "PSETEX", "GETRANGE", "SETRANGE", "MSETNX",
+  
+  // Hash commands
+  "HGET", "HSET", "HMSET", "HMGET", "HGETALL", "HDEL", "HEXISTS", "HKEYS", "HVALS", "HLEN",
+  "HINCRBY", "HINCRBYFLOAT", "HSETNX", "HSCAN", "HSTRLEN",
+  
+  // List commands
+  "LPUSH", "RPUSH", "LPOP", "RPOP", "LLEN", "LRANGE", "LINDEX", "LSET", "LINSERT", "LREM",
+  "LPUSHX", "RPUSHX", "LPOS", "LTRIM", "BLPOP", "BRPOP", "BRPOPLPUSH", "BLMOVE",
+  
+  // Set commands
+  "SADD", "SREM", "SMEMBERS", "SCARD", "SISMEMBER", "SINTER", "SUNION", "SDIFF", "SINTERSTORE",
+  "SUNIONSTORE", "SDIFFSTORE", "SPOP", "SRANDMEMBER", "SMOVE", "SSCAN",
+  
+  // Sorted Set commands
+  "ZADD", "ZREM", "ZRANGE", "ZREVRANGE", "ZRANGEBYSCORE", "ZREVRANGEBYSCORE", "ZCARD", "ZSCORE",
+  "ZRANK", "ZREVRANK", "ZCOUNT", "ZINCRBY", "ZUNIONSTORE", "ZINTERSTORE", "ZPOPMAX", "ZPOPMIN",
+  "ZRANDMEMBER", "ZSCAN", "ZRANGEBYLEX", "ZREVRANGEBYLEX", "ZLEXCOUNT", "ZREMRANGEBYRANK",
+  "ZREMRANGEBYSCORE", "ZREMRANGEBYLEX", "ZMSCORE",
+  
+  // HyperLogLog commands
+  "PFADD", "PFCOUNT", "PFMERGE",
+  
+  // Bitmap commands
+  "SETBIT", "GETBIT", "BITCOUNT", "BITPOS", "BITOP", "BITFIELD",
+  
+  // Stream commands
+  "XADD", "XREAD", "XREADGROUP", "XRANGE", "XREVRANGE", "XLEN", "XDEL", "XTRIM", "XGROUP",
+  "XINFO", "XPENDING", "XCLAIM", "XACK", "XAUTOCLAIM",
+  
+  // Geospatial commands
+  "GEOADD", "GEOPOS", "GEODIST", "GEORADIUS", "GEORADIUSBYMEMBER", "GEOHASH", "GEOSEARCH",
+  "GEOSEARCHSTORE",
+  
+  // Key commands
+  "DEL", "EXISTS", "EXPIRE", "EXPIREAT", "PEXPIRE", "PEXPIREAT", "KEYS", "RENAME", "RENAMENX",
+  "TYPE", "TTL", "PTTL", "PERSIST", "RANDOMKEY", "DUMP", "RESTORE", "MIGRATE", "MOVE", "OBJECT",
+  "SCAN", "TOUCH", "UNLINK", "WAIT",
+  
+  // Server commands
+  "PING", "INFO", "CONFIG", "CLIENT", "COMMAND", "DEBUG", "FLUSHDB", "FLUSHALL", "DBSIZE",
+  "LASTSAVE", "MONITOR", "SAVE", "BGSAVE", "BGREWRITEAOF", "SHUTDOWN", "SLAVEOF", "REPLICAOF",
+  "ROLE", "SYNC", "PSYNC", "SLAVEOF", "REPLICAOF", "READONLY", "READWRITE", "MEMORY",
+  "LATENCY", "MODULE", "ACL", "HELLO", "RESET", "QUIT", "SELECT", "SWAPDB", "LOLWUT",
+  
+  // Transaction commands
+  "MULTI", "EXEC", "DISCARD", "WATCH", "UNWATCH",
+  
+  // Scripting commands
+  "EVAL", "EVALSHA", "SCRIPT", "FCALL", "FCALL_RO",
+  
+  // Pub/Sub commands
+  "PUBLISH", "SUBSCRIBE", "UNSUBSCRIBE", "PSUBSCRIBE", "PUNSUBSCRIBE", "PUBSUB",
+  
+  // Cluster commands
+  "CLUSTER", "READONLY", "READWRITE", "ASKING",
+  
+  // Connection commands
+  "AUTH", "ECHO", "SELECT", "QUIT",
+  
+  // Admin commands
+  "CONFIG", "COMMAND", "ACL", "LATENCY", "MEMORY", "MODULE", "SLOWLOG", "TIME"
 ]
 
 export function RedisConsole() {
