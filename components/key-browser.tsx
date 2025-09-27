@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Search, Key, RefreshCw, Trash2, Copy, Eye, EyeOff, Database, Hash, List, FileText, Layers } from "lucide-react"
+import { Search, Key, RefreshCw, Trash2, Copy, Eye, EyeOff, Database, Hash, List, FileText, Layers, Waves, MapPin, Binary, BarChart3 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { KeyValueViewer } from "@/components/key-value-viewer"
@@ -89,17 +89,21 @@ export function KeyBrowser() {
   const getTypeIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case "string":
-        return <FileText className="w-4 h-4" />
+        return <FileText className="w-4 h-4 dark:text-blue-400" />
       case "hash":
-        return <Hash className="w-4 h-4" />
+        return <Hash className="w-4 h-4 dark:text-green-600" />
       case "list":
-        return <List className="w-4 h-4" />
+        return <List className="w-4 h-4 dark:text-purple-400" />
       case "set":
-        return <Database className="w-4 h-4" />
+        return <Database className="w-4 h-4 !dark:text-orange-100" />
       case "zset":
-        return <Layers className="w-4 h-4" />
+        return <Layers className="w-4 h-4 dark:text-red-400" />
+      case "stream":
+        return <Waves className="w-4 h-4 dark:text-cyan-400" />
+      case "rejson-rl":
+        return <FileText className="w-4 h-4 dark:text-indigo-400" />
       default:
-        return <Key className="w-4 h-4" />
+        return <Key className="w-4 h-4 dark:text-gray-400" />
     }
   }
 
@@ -115,6 +119,10 @@ export function KeyBrowser() {
         return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
       case "zset":
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+      case "stream":
+        return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200"
+      case "rejson-rl":
+        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200"
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
     }

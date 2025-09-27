@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { RefreshCw, Clock, Edit, Check, X } from "lucide-react"
+import { RefreshCw, Clock, Edit, Check, X, Waves, MapPin, Binary, BarChart3, Hash, List, Database, Layers, FileText } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { StreamViewer } from "@/components/stream-viewer"
 
 interface KeyValueViewerProps {
   keyName: string
@@ -96,6 +97,15 @@ export function KeyValueViewer({ keyName, onKeyDeleted }: KeyValueViewerProps) {
       case "set":
       case "zset":
         return JSON.stringify(value, null, 2)
+      case "stream":
+        // Stream data has special structure
+        if (value && typeof value === 'object') {
+          if (value.error) {
+            return value.error
+          }
+          return JSON.stringify(value, null, 2)
+        }
+        return JSON.stringify(value, null, 2)
       case "rejson-rl":
         // REJSON data is already parsed as an object, format it nicely
         return JSON.stringify(value, null, 2)
@@ -104,8 +114,55 @@ export function KeyValueViewer({ keyName, onKeyDeleted }: KeyValueViewerProps) {
     }
   }
 
+  const getTypeIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "string":
+        return <FileText className="w-4 h-4" />
+      case "hash":
+        return <Hash className="w-4 h-4" />
+      case "list":
+        return <List className="w-4 h-4" />
+      case "set":
+        return <Database className="w-4 h-4" />
+      case "zset":
+        return <Layers className="w-4 h-4" />
+      case "stream":
+        return <Waves className="w-4 h-4" />
+      case "rejson-rl":
+        return <FileText className="w-4 h-4" />
+      default:
+        return <FileText className="w-4 h-4" />
+    }
+  }
+
+  const getTypeDescription = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "string":
+        return "String value"
+      case "hash":
+        return "Hash (field-value pairs)"
+      case "list":
+        return "List (ordered collection)"
+      case "set":
+        return "Set (unique elements)"
+      case "zset":
+        return "Sorted Set (with scores)"
+      case "stream":
+        return "Stream (append-only log)"
+      case "rejson-rl":
+        return "JSON document (RedisJSON)"
+      default:
+        return "Unknown data type"
+    }
+  }
+
   const renderValue = () => {
     if (!keyDetails) return null
+
+    // Use specialized viewer for streams
+    if (keyDetails.type.toLowerCase() === 'stream') {
+      return <StreamViewer keyName={keyDetails.key} streamData={keyDetails.value} />
+    }
 
     if (isEditing) {
       return (
@@ -200,8 +257,10 @@ export function KeyValueViewer({ keyName, onKeyDeleted }: KeyValueViewerProps) {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-muted-foreground">Type</label>
-            <div>
-              <Badge variant="secondary">{keyDetails.type}</Badge>
+            <div className="flex items-center gap-2">
+              {getTypeIcon(keyDetails.type)}
+              <Badge variant="secondary">{keyDetails.type.toUpperCase()}</Badge>
+              <span className="text-xs text-muted-foreground">{getTypeDescription(keyDetails.type)}</span>
             </div>
           </div>
         </div>

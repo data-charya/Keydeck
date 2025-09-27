@@ -256,6 +256,23 @@ export async function getKeyInfo(key: string) {
         value = await client.zrange(key, 0, -1, 'WITHSCORES')
         size = JSON.stringify(value).length
         break
+      case 'stream':
+        // Get stream info and recent entries
+        try {
+          const streamInfo = await client.xinfo('STREAM', key) as any[]
+          const recentEntries = await client.xrevrange(key, '+', '-', 'COUNT', 10)
+          value = {
+            info: streamInfo,
+            recentEntries: recentEntries,
+            length: streamInfo[1] // Length is at index 1 in xinfo output
+          }
+          size = JSON.stringify(value).length
+        } catch (streamError) {
+          // Fallback to basic stream info
+          value = { error: 'Could not retrieve stream data' }
+          size = 0
+        }
+        break
       case 'ReJSON-RL':
         // Handle REJSON (RedisJSON) keys
         try {
@@ -269,7 +286,30 @@ export async function getKeyInfo(key: string) {
         }
         break
       default:
-        value = null
+        // Handle other data types that might be detected
+        try {
+          // Try to get as string first
+          const stringValue = await client.get(key)
+          if (stringValue !== null) {
+            value = stringValue
+            size = Buffer.byteLength(stringValue, 'utf8')
+          } else {
+            // Try to detect if it's a bitmap, hyperloglog, or other type
+            const keyType = await client.type(key)
+            if (keyType === 'string') {
+              // Might be a bitmap or other string-based type
+              const strLen = await client.strlen(key)
+              value = `Binary data (${strLen} bytes)`
+              size = strLen
+            } else {
+              value = `Unknown type: ${keyType}`
+              size = 0
+            }
+          }
+        } catch (error) {
+          value = `Error retrieving data: ${error instanceof Error ? error.message : 'Unknown error'}`
+          size = 0
+        }
     }
 
     return {
@@ -334,5 +374,117 @@ export async function getRedisInfo(): Promise<any> {
     return result
   } catch (error) {
     throw new Error(`Failed to get Redis info: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+// Helper function to get stream entries
+export async function getStreamEntries(key: string, start: string = '-', end: string = '+', count: number = 100) {
+  const client = connectionManager.getClient()
+  if (!client) {
+    throw new Error('Redis client not connected')
+  }
+
+  try {
+    const entries = await client.xrange(key, start, end, 'COUNT', count)
+    return entries
+  } catch (error) {
+    throw new Error(`Failed to get stream entries: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+// Helper function to get stream info
+export async function getStreamInfo(key: string) {
+  const client = connectionManager.getClient()
+  if (!client) {
+    throw new Error('Redis client not connected')
+  }
+
+  try {
+    const info = await client.xinfo('STREAM', key)
+    return info
+  } catch (error) {
+    throw new Error(`Failed to get stream info: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+// Helper function to get bitmap information
+export async function getBitmapInfo(key: string) {
+  const client = connectionManager.getClient()
+  if (!client) {
+    throw new Error('Redis client not connected')
+  }
+
+  try {
+    const bitCount = await client.bitcount(key)
+    const strLen = await client.strlen(key)
+    return {
+      bitCount,
+      byteLength: strLen,
+      totalBits: strLen * 8
+    }
+  } catch (error) {
+    throw new Error(`Failed to get bitmap info: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+// Helper function to get hyperloglog information
+export async function getHyperLogLogInfo(key: string) {
+  const client = connectionManager.getClient()
+  if (!client) {
+    throw new Error('Redis client not connected')
+  }
+
+  try {
+    const count = await client.pfcount(key)
+    return { count }
+  } catch (error) {
+    throw new Error(`Failed to get hyperloglog info: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+// Helper function to get geospatial information
+export async function getGeospatialInfo(key: string) {
+  const client = connectionManager.getClient()
+  if (!client) {
+    throw new Error('Redis client not connected')
+  }
+
+  try {
+    const positions = await client.geopos(key, '*')
+    const count = positions.length
+    return {
+      count,
+      positions: positions.filter(pos => pos !== null)
+    }
+  } catch (error) {
+    throw new Error(`Failed to get geospatial info: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+// Helper function to detect and get specialized data type info
+export async function getSpecializedTypeInfo(key: string, type: string) {
+  switch (type.toLowerCase()) {
+    case 'stream':
+      return await getStreamInfo(key)
+    case 'string':
+      // Check if it might be a bitmap or hyperloglog
+      try {
+        const bitCount = await executeRedisCommand('bitcount', key)
+        if (bitCount > 0) {
+          return await getBitmapInfo(key)
+        }
+      } catch {
+        // Not a bitmap, try hyperloglog
+        try {
+          const pfCount = await executeRedisCommand('pfcount', key)
+          return await getHyperLogLogInfo(key)
+        } catch {
+          // Regular string
+          return null
+        }
+      }
+      break
+    default:
+      return null
   }
 }
