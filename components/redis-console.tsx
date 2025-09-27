@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Terminal, Send, Trash2, Copy, Clock, CheckCircle, XCircle, Info } from "lucide-react"
+import { Terminal, Send, Trash2, Copy, Clock, CheckCircle, XCircle, Info, BookOpen } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { getDetailedErrorInfo } from "@/lib/error-translator"
 import { useRedisConnection } from "@/hooks/use-redis-connection"
+import { CommandReference } from "@/components/command-reference"
 
 interface ConsoleEntry {
   id: string
@@ -98,6 +99,7 @@ export function RedisConsole() {
   const [isExecuting, setIsExecuting] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [showCommandReference, setShowCommandReference] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
@@ -326,6 +328,14 @@ export function RedisConsole() {
             <Badge variant="outline" className="text-xs">
               {history.length} commands
             </Badge>
+            <Button 
+              onClick={() => setShowCommandReference(true)} 
+              size="sm" 
+              variant="outline"
+              title="Open Command Reference"
+            >
+              <BookOpen className="w-4 h-4" />
+            </Button>
             <Button onClick={clearHistory} size="sm" variant="outline" disabled={history.length === 0}>
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -448,6 +458,16 @@ export function RedisConsole() {
           </div>
         </div>
       </CardContent>
+
+      {/* Command Reference Modal */}
+      <CommandReference 
+        open={showCommandReference} 
+        onOpenChange={setShowCommandReference}
+        onCommandSelect={(command) => {
+          setCommand(command)
+          inputRef.current?.focus()
+        }}
+      />
     </Card>
   )
 }
