@@ -122,6 +122,17 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Coral text selection color */
+  ::selection {
+    background-color: var(--color-coral);
+    color: var(--color-coral-foreground);
+  }
+  
+  ::-moz-selection {
+    background-color: var(--color-coral);
+    color: var(--color-coral-foreground);
+  }
 }
 
 @layer utilities {
