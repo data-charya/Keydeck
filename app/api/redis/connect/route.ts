@@ -5,7 +5,7 @@ import { getDetailedErrorInfo } from "@/lib/error-translator"
 export async function POST(request: NextRequest) {
   try {
     const config = await request.json()
-    const { host, port, username, password, database } = config
+    const { host, port, username, password, database, tls, connectTimeout, commandTimeout, maxRetriesPerRequest } = config
 
     // Basic validation
     if (!host || !port) {
@@ -15,13 +15,17 @@ export async function POST(request: NextRequest) {
     // Disconnect existing connection if any
     await disconnectFromRedis()
 
-    // Connect to Redis
+    // Connect to Redis with enhanced configuration
     const client = await connectToRedis({
       host,
       port,
       username,
       password,
-      database: database || 0
+      database: database || 0,
+      tls: tls || false,
+      connectTimeout: connectTimeout || 10000,
+      commandTimeout: commandTimeout || 5000,
+      maxRetriesPerRequest: maxRetriesPerRequest || 5
     })
 
     return NextResponse.json({

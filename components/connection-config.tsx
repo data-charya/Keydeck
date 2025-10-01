@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Database, AlertCircle, Info } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Loader2, Database, AlertCircle, Info, Settings } from "lucide-react"
 import { getDetailedErrorInfo } from "@/lib/error-translator"
 
 interface ConnectionConfigProps {
@@ -19,6 +20,10 @@ export interface RedisConfig {
   username?: string
   password?: string
   database?: number
+  tls?: boolean
+  connectTimeout?: number
+  commandTimeout?: number
+  maxRetriesPerRequest?: number
 }
 
 export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
@@ -28,11 +33,16 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
     username: "",
     password: "",
     database: 0,
+    tls: false,
+    connectTimeout: 10000,
+    commandTimeout: 5000,
+    maxRetriesPerRequest: 5,
   })
   const [connectionName, setConnectionName] = useState("")
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [detailedError, setDetailedError] = useState<any>(null)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const handleConnect = async () => {
     setIsConnecting(true)
@@ -70,6 +80,7 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
               <div className="text-sm space-y-1">
                 <p>• <strong>Remote Redis Only:</strong> This app can only connect to Redis servers accessible from the internet</p>
                 <p>• <strong>Public IP/Domain:</strong> Use your Redis server's public IP or domain name</p>
+                <p>• <strong>Cloud Providers:</strong> Enable TLS/SSL for services like Aiven, Redis Cloud, AWS ElastiCache</p>
                 <p>• <strong>Local Redis:</strong> Not supported - browsers block local network access for security</p>
                 <p>• <strong>Self-hosted:</strong> Run this app locally to connect to local Redis instances</p>
               </div>
@@ -140,6 +151,66 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
             placeholder="0"
           />
         </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="tls"
+            checked={config.tls}
+            onCheckedChange={(checked) => setConfig({ ...config, tls: checked })}
+          />
+          <Label htmlFor="tls">Enable TLS/SSL (required for most cloud providers)</Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            {showAdvanced ? "Hide" : "Show"} Advanced Settings
+          </Button>
+        </div>
+
+        {showAdvanced && (
+          <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+            <h4 className="font-medium text-sm">Advanced Connection Settings</h4>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="connectTimeout">Connection Timeout (ms)</Label>
+                <Input
+                  id="connectTimeout"
+                  type="number"
+                  value={config.connectTimeout}
+                  onChange={(e) => setConfig({ ...config, connectTimeout: Number.parseInt(e.target.value) || 10000 })}
+                  placeholder="10000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="commandTimeout">Command Timeout (ms)</Label>
+                <Input
+                  id="commandTimeout"
+                  type="number"
+                  value={config.commandTimeout}
+                  onChange={(e) => setConfig({ ...config, commandTimeout: Number.parseInt(e.target.value) || 5000 })}
+                  placeholder="5000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxRetries">Max Retries Per Request</Label>
+                <Input
+                  id="maxRetries"
+                  type="number"
+                  value={config.maxRetriesPerRequest}
+                  onChange={(e) => setConfig({ ...config, maxRetriesPerRequest: Number.parseInt(e.target.value) || 5 })}
+                  placeholder="5"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && (
           <Alert variant="destructive">

@@ -182,6 +182,22 @@ export function translateError(error: Error | string): HumanReadableError {
     }
   }
 
+  // Max retries errors (common with cloud providers)
+  if (lowerError.includes('maxretriesperrequesterror') || lowerError.includes('reached the max retries')) {
+    return {
+      title: "Connection Retry Limit Exceeded",
+      message: "The connection to Redis failed after multiple attempts. This often happens with cloud Redis providers.",
+      suggestions: [
+        "Check if your Redis provider requires SSL/TLS (enable TLS in connection settings)",
+        "Verify your connection credentials are correct",
+        "Try increasing connection timeout settings",
+        "Check if your IP address is whitelisted on the Redis server",
+        "Ensure your network allows outbound connections to the Redis port"
+      ],
+      technicalDetails: errorMessage
+    }
+  }
+
   // Generic connection errors
   if (lowerError.includes('connection') && (lowerError.includes('closed') || lowerError.includes('lost'))) {
     return {

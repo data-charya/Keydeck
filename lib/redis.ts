@@ -8,6 +8,10 @@ export interface RedisConfig {
   username?: string
   password?: string
   database?: number
+  tls?: boolean
+  connectTimeout?: number
+  commandTimeout?: number
+  maxRetriesPerRequest?: number
 }
 
 // Connection manager class to handle persistent connections
@@ -47,21 +51,31 @@ class RedisConnectionManager {
         await this.disconnect()
       }
 
-      // Create new client with better connection settings
-      this.client = new Redis({
+      // Create new client with optimized settings for cloud providers
+      const redisOptions: any = {
         host: config.host,
         port: config.port,
         username: config.username || undefined,
         password: config.password || undefined,
         db: config.database || 0,
-        maxRetriesPerRequest: 1, // Reduced retries for faster failure feedback
+        maxRetriesPerRequest: config.maxRetriesPerRequest || 5, // Increased for cloud providers
         lazyConnect: false, // Connect immediately
         keepAlive: 30000, // Keep connection alive
-        connectTimeout: 5000, // 5 second timeout (reduced for faster feedback)
-        commandTimeout: 3000, // 3 second command timeout
+        connectTimeout: config.connectTimeout || 10000, // Increased timeout for cloud connections
+        commandTimeout: config.commandTimeout || 5000, // Increased command timeout
         enableReadyCheck: true,
         family: 4, // Force IPv4
-      })
+        retryDelayOnFailover: 100,
+        retryDelayOnClusterDown: 300,
+        // Add TLS support for cloud providers
+        ...(config.tls && {
+          tls: {
+            rejectUnauthorized: false, // Allow self-signed certificates for cloud providers
+          }
+        })
+      }
+
+      this.client = new Redis(redisOptions)
 
       // Set up error handling
       this.client.on('error', (error) => {
@@ -136,20 +150,26 @@ class RedisConnectionManager {
 const connectionManager = new RedisConnectionManager()
 
 export function createRedisClient(config: RedisConfig): Redis {
-  const client = new Redis({
+  const redisOptions: any = {
     host: config.host,
     port: config.port,
     username: config.username || undefined,
     password: config.password || undefined,
     db: config.database || 0,
-    maxRetriesPerRequest: 1,
+    maxRetriesPerRequest: config.maxRetriesPerRequest || 3,
     lazyConnect: true,
-    connectTimeout: 5000,
-    commandTimeout: 3000,
+    connectTimeout: config.connectTimeout || 10000,
+    commandTimeout: config.commandTimeout || 5000,
     family: 4, // Force IPv4
-  })
+    // Add TLS support for cloud providers
+    ...(config.tls && {
+      tls: {
+        rejectUnauthorized: false, // Allow self-signed certificates for cloud providers
+      }
+    })
+  }
 
-  return client
+  return new Redis(redisOptions)
 }
 
 export function getRedisClient(): Redis | null {
