@@ -94,6 +94,9 @@ export function buildRedisUri(config: RedisConfig): string {
 
 // Helper function to generate a meaningful connection name
 export function generateConnectionName(config: RedisConfig, osInfo?: string): string {
+  if (!config.host || typeof config.host !== 'string') {
+    return 'Unknown Connection'
+  }
   const host = config.host.toLowerCase()
   
   // Extract meaningful parts from hostname

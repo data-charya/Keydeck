@@ -226,6 +226,10 @@ export async function executeRedisCommand<T = any>(
 
 // Helper function to get key information
 export async function getKeyInfo(key: string) {
+  if (!key || typeof key !== 'string') {
+    throw new Error('Invalid key parameter: key must be a non-empty string')
+  }
+  
   const client = connectionManager.getClient()
   if (!client) {
     throw new Error('Redis client not connected')

@@ -134,7 +134,10 @@ export function KeyBrowser() {
 
   useEffect(() => {
     if (searchTerm) {
-      const filtered = keys.filter((key) => key.key.toLowerCase().includes(searchTerm.toLowerCase()))
+      const filtered = keys.filter((key) => 
+        key && key.key && typeof key.key === 'string' && 
+        key.key.toLowerCase().includes(searchTerm.toLowerCase())
+      )
       setFilteredKeys(filtered)
     } else {
       setFilteredKeys(keys)

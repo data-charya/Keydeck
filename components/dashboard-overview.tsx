@@ -111,6 +111,16 @@ export function DashboardOverview() {
   }
 
   const getOSInfo = (osString: string) => {
+    if (!osString || typeof osString !== 'string') {
+      return {
+        name: 'Unknown',
+        color: 'text-gray-500',
+        bgColor: 'bg-gray-50 dark:bg-gray-800',
+        borderColor: 'border-gray-200 dark:border-gray-700',
+        logo: '🖥️',
+        description: 'Operating system information not available'
+      }
+    }
     const os = osString.toLowerCase()
     
     if (os.includes('linux')) {
