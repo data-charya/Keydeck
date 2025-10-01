@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
-import type { RedisConfig } from "@/components/connection-config"
+import type { RedisConfig } from "@/lib/redis-uri"
+import { generateConnectionName } from "@/lib/redis-uri"
 import { getSecureStorage } from "@/lib/client-crypto"
 
 interface RedisConnection extends RedisConfig {
@@ -136,7 +137,9 @@ export function useRedisConnection() {
 
       // Create connection object
       const connectionId = `${config.host}:${config.port}:${config.database || 0}`
-      const connectionName_ = connectionName || `${config.host}:${config.port}`
+      
+      // Generate a meaningful connection name if none provided
+      const connectionName_ = connectionName || generateConnectionName(config)
       
       const newConnection: RedisConnection = {
         ...config,

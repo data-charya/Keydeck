@@ -1,32 +1,47 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectToRedis, disconnectFromRedis } from "@/lib/redis"
+import { connectToRedis, disconnectFromRedis, parseRedisUri } from "@/lib/redis"
 import { getDetailedErrorInfo } from "@/lib/error-translator"
 
 export async function POST(request: NextRequest) {
   try {
-    const config = await request.json()
-    const { host, port, username, password, database, tls, connectTimeout, commandTimeout, maxRetriesPerRequest } = config
+    const requestData = await request.json()
+    const { uri, host, port, username, password, database, tls, connectTimeout, commandTimeout, maxRetriesPerRequest } = requestData
 
-    // Basic validation
-    if (!host || !port) {
-      return NextResponse.json({ error: "Host and port are required" }, { status: 400 })
+    let config: any
+
+    // Handle URI connection
+    if (uri) {
+      try {
+        config = parseRedisUri(uri)
+      } catch (error) {
+        return NextResponse.json({ 
+          error: error instanceof Error ? error.message : "Invalid URI format" 
+        }, { status: 400 })
+      }
+    } else {
+      // Handle form-based connection
+      if (!host || !port) {
+        return NextResponse.json({ error: "Host and port are required" }, { status: 400 })
+      }
+
+      config = {
+        host,
+        port,
+        username,
+        password,
+        database: database || 0,
+        tls: tls || false,
+        connectTimeout: connectTimeout || 10000,
+        commandTimeout: commandTimeout || 5000,
+        maxRetriesPerRequest: maxRetriesPerRequest || 5
+      }
     }
 
     // Disconnect existing connection if any
     await disconnectFromRedis()
 
-    // Connect to Redis with enhanced configuration
-    const client = await connectToRedis({
-      host,
-      port,
-      username,
-      password,
-      database: database || 0,
-      tls: tls || false,
-      connectTimeout: connectTimeout || 10000,
-      commandTimeout: commandTimeout || 5000,
-      maxRetriesPerRequest: maxRetriesPerRequest || 5
-    })
+    // Connect to Redis with configuration
+    const client = await connectToRedis(config)
 
     return NextResponse.json({
       success: true,

@@ -39,17 +39,39 @@ export async function GET() {
     if (uptimeHours > 0) uptimeString += `${uptimeString ? ', ' : ''}${uptimeHours} hour${uptimeHours > 1 ? 's' : ''}`
     if (uptimeMinutes > 0 && uptimeDays === 0) uptimeString += `${uptimeString ? ', ' : ''}${uptimeMinutes} minute${uptimeMinutes > 1 ? 's' : ''}`
 
+    // Calculate memory usage percentage and capacity info
+    const usedMemoryBytes = parseInt(info.used_memory || '0')
+    const maxMemoryBytes = parseInt(info.maxmemory || '0')
+    const memoryUsagePercentage = maxMemoryBytes > 0 ? Math.round((usedMemoryBytes / maxMemoryBytes) * 100) : 0
+    
+    // Get additional memory info
+    const memoryFragmentationRatio = parseFloat(info.mem_fragmentation_ratio || '1.0')
+    const memoryFragmentationBytes = parseInt(info.mem_fragmentation_bytes || '0')
+    
     const stats = {
       version: info.redis_version || "Unknown",
       uptime: uptimeString || "0 minutes",
       connectedClients: parseInt(info.connected_clients || '0'),
       usedMemory: info.used_memory_human || "0B",
       usedMemoryPeak: info.used_memory_peak_human || "0B",
+      maxMemory: info.maxmemory_human || "Unlimited",
+      usedMemoryBytes: usedMemoryBytes,
+      maxMemoryBytes: maxMemoryBytes,
+      memoryUsagePercentage: memoryUsagePercentage,
+      memoryFragmentationRatio: memoryFragmentationRatio,
+      memoryFragmentationBytes: memoryFragmentationBytes,
       totalKeys: totalKeys,
       totalCommands: parseInt(info.total_commands_processed || '0'),
       keyspaceHits: parseInt(info.keyspace_hits || '0'),
       keyspaceMisses: parseInt(info.keyspace_misses || '0'),
       opsPerSec: parseInt(info.instantaneous_ops_per_sec || '0'),
+      // Additional server info
+      redisMode: info.redis_mode || "standalone",
+      os: info.os || "Unknown",
+      archBits: info.arch_bits || "64",
+      processId: info.process_id || "Unknown",
+      tcpPort: info.tcp_port || "6379",
+      uptimeInSeconds: uptimeSeconds,
     }
 
     return NextResponse.json({

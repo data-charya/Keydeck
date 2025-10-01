@@ -1,18 +1,10 @@
 import Redis from 'ioredis'
+import { parseRedisUri, buildRedisUri, type RedisConfig } from './redis-uri'
 
 // Global Redis client instance with connection info (legacy - now handled by connectionManager)
 
-export interface RedisConfig {
-  host: string
-  port: number
-  username?: string
-  password?: string
-  database?: number
-  tls?: boolean
-  connectTimeout?: number
-  commandTimeout?: number
-  maxRetriesPerRequest?: number
-}
+// Re-export URI functions for backward compatibility
+export { parseRedisUri, buildRedisUri, type RedisConfig }
 
 // Connection manager class to handle persistent connections
 class RedisConnectionManager {

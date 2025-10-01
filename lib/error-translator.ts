@@ -182,6 +182,22 @@ export function translateError(error: Error | string): HumanReadableError {
     }
   }
 
+  // URI parsing errors
+  if (lowerError.includes('invalid redis uri') || lowerError.includes('invalid protocol')) {
+    return {
+      title: "Invalid Redis URI",
+      message: "The Redis connection URI format is incorrect.",
+      suggestions: [
+        "Use redis:// for unencrypted connections or rediss:// for TLS connections",
+        "Check the URI format: redis://[username:password@]host:port[/database]",
+        "Ensure special characters in passwords are URL-encoded",
+        "Verify the host and port are correct",
+        "Try using the form method instead if URI parsing continues to fail"
+      ],
+      technicalDetails: errorMessage
+    }
+  }
+
   // Max retries errors (common with cloud providers)
   if (lowerError.includes('maxretriesperrequesterror') || lowerError.includes('reached the max retries')) {
     return {
