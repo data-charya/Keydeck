@@ -433,7 +433,7 @@ export function DashboardOverview() {
                       <p className={`text-sm text-muted-foreground mt-1 ${getOSInfo(stats.os).color}`}>
                         {getOSInfo(stats.os).description}
                       </p>
-                      <p className={`text-xs font-mono text-muted-foreground mt-1 ${getOSInfo(stats.os).color}`}>
+                      <p className="text-xs font-mono text-muted-foreground mt-1">
                         {stats.os}
                       </p>
                     </div>
