@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Search, Key, RefreshCw, Trash2, Copy, Eye, EyeOff, Database, Hash, List, FileText, Layers, Waves, MapPin, Binary, BarChart3 } from "lucide-react"
+import { Search, Key, RefreshCw, Trash2, Copy, Eye, EyeOff, Database, Hash, List, FileText, Layers, Waves, MapPin, Binary, BarChart3, Filter, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { KeyValueViewer } from "@/components/key-value-viewer"
 import { useToast } from "@/hooks/use-toast"
 
@@ -24,10 +25,31 @@ export function KeyBrowser() {
   const [keys, setKeys] = useState<RedisKey[]>([])
   const [filteredKeys, setFilteredKeys] = useState<RedisKey[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [typeFilter, setTypeFilter] = useState<string>("all")
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm("")
+    setTypeFilter("all")
+  }
+
+  // Get unique types from keys with counts
+  const getUniqueTypes = () => {
+    const typeCounts: Record<string, number> = {}
+    keys.forEach(key => {
+      if (key?.type) {
+        typeCounts[key.type] = (typeCounts[key.type] || 0) + 1
+      }
+    })
+    
+    return Object.entries(typeCounts)
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => a.type.localeCompare(b.type))
+  }
 
   const loadKeys = async () => {
     setIsLoading(true)
@@ -133,16 +155,25 @@ export function KeyBrowser() {
   }, [])
 
   useEffect(() => {
+    let filtered = keys
+
+    // Filter by search term
     if (searchTerm) {
-      const filtered = keys.filter((key) => 
+      filtered = filtered.filter((key) => 
         key && key.key && typeof key.key === 'string' && 
         key.key.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      setFilteredKeys(filtered)
-    } else {
-      setFilteredKeys(keys)
     }
-  }, [searchTerm, keys])
+
+    // Filter by type
+    if (typeFilter !== "all") {
+      filtered = filtered.filter((key) => 
+        key && key.type && key.type.toLowerCase() === typeFilter.toLowerCase()
+      )
+    }
+
+    setFilteredKeys(filtered)
+  }, [searchTerm, typeFilter, keys])
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -163,14 +194,30 @@ export function KeyBrowser() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search keys..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search keys..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[140px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types ({keys.length})</SelectItem>
+                {getUniqueTypes().map((typeInfo) => (
+                  <SelectItem key={typeInfo.type} value={typeInfo.type}>
+                    {typeInfo.type} ({typeInfo.count})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {error && (
@@ -183,7 +230,23 @@ export function KeyBrowser() {
             <span>
               {filteredKeys.length} of {keys.length} keys
             </span>
-            {searchTerm && <span>Filtered by: "{searchTerm}"</span>}
+            <div className="flex items-center gap-2">
+              <div className="flex gap-2">
+                {searchTerm && <span>Search: "{searchTerm}"</span>}
+                {typeFilter !== "all" && <span>Type: {typeFilter}</span>}
+              </div>
+              {(searchTerm || typeFilter !== "all") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-6 px-2 text-xs"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
 
           <ScrollArea className="h-[500px]">
