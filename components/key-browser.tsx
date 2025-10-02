@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Search, Key, RefreshCw, Trash2, Copy, Eye, EyeOff, Database, Hash, List, FileText, Layers, Waves, MapPin, Binary, BarChart3, Filter, X } from "lucide-react"
+import { Search, Key, RefreshCw, Trash2, Copy, Eye, EyeOff, Database, Hash, List, FileText, Layers, Waves, MapPin, Binary, BarChart3, Filter, X, KeyIcon, ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -22,6 +22,20 @@ interface RedisKey {
   size: number
 }
 
+interface KeyGroup {
+  name: string
+  fullPath: string
+  keys: RedisKey[]
+  children: Record<string, KeyGroup>
+  isExpanded: boolean
+  level: number
+}
+
+interface GroupedKeys {
+  groups: Record<string, KeyGroup>
+  flatKeys: RedisKey[]
+}
+
 export function KeyBrowser() {
   const [keys, setKeys] = useState<RedisKey[]>([])
   const [filteredKeys, setFilteredKeys] = useState<RedisKey[]>([])
@@ -30,12 +44,97 @@ export function KeyBrowser() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const { toast } = useToast()
 
   // Clear all filters
   const clearFilters = () => {
     setSearchTerm("")
     setTypeFilter("all")
+  }
+
+  // Group keys by namespace (colon-separated parts)
+  const groupKeysByNamespace = (keys: RedisKey[]): GroupedKeys => {
+    const groups: Record<string, KeyGroup> = {}
+    const flatKeys: RedisKey[] = []
+
+    keys.forEach(key => {
+      const keyParts = key.key.split(':')
+      
+      if (keyParts.length === 1) {
+        // Key has no namespace, add to flat keys
+        flatKeys.push(key)
+      } else {
+        // Key has namespace, group it
+        let currentGroups = groups
+        let currentPath = ''
+        
+        for (let i = 0; i < keyParts.length - 1; i++) {
+          const part = keyParts[i]
+          const fullPath = currentPath ? `${currentPath}:${part}` : part
+          
+          if (!currentGroups[part]) {
+            currentGroups[part] = {
+              name: part,
+              fullPath,
+              keys: [],
+              children: {},
+              isExpanded: expandedGroups.has(fullPath),
+              level: i
+            }
+          }
+          
+          currentGroups = currentGroups[part].children
+          currentPath = fullPath
+        }
+        
+        // Add the key to the deepest group
+        const parentGroup = keyParts.slice(0, -1).reduce((acc, part) => {
+          const fullPath = acc.fullPath ? `${acc.fullPath}:${part}` : part
+          return acc.children[part] || { name: part, fullPath, keys: [], children: {}, isExpanded: false, level: 0 }
+        }, { fullPath: '', children: groups } as any)
+        
+        if (parentGroup.keys) {
+          parentGroup.keys.push(key)
+        }
+      }
+    })
+
+    return { groups, flatKeys }
+  }
+
+  // Toggle group expansion
+  const toggleGroup = (groupPath: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(groupPath)) {
+        newSet.delete(groupPath)
+      } else {
+        newSet.add(groupPath)
+      }
+      return newSet
+    })
+  }
+
+  // Expand all groups
+  const expandAllGroups = () => {
+    const allGroupPaths = new Set<string>()
+    
+    const collectGroupPaths = (groups: Record<string, KeyGroup>) => {
+      Object.values(groups).forEach(group => {
+        allGroupPaths.add(group.fullPath)
+        collectGroupPaths(group.children)
+      })
+    }
+    
+    const { groups } = groupKeysByNamespace(filteredKeys)
+    collectGroupPaths(groups)
+    setExpandedGroups(allGroupPaths)
+  }
+
+  // Collapse all groups
+  const collapseAllGroups = () => {
+    setExpandedGroups(new Set())
   }
 
   // Get unique types from keys with counts
@@ -214,6 +313,161 @@ export function KeyBrowser() {
     }
   }
 
+  // Render a single key item
+  const renderKeyItem = (keyData: RedisKey, level: number = 0) => (
+    <div
+      key={keyData.key}
+      className={`group relative p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 ${
+        selectedKey === keyData.key 
+          ? `${getTypeBackgroundColor(keyData.type)} ${getTypeBorderColor(keyData.type)} shadow-sm ring-1 ring-current/20 border-l-4 ${getTypeLeftBorderColor(keyData.type)}` 
+          : `bg-card/50 border-border hover:border-border hover:bg-muted/30`
+      }`}
+      onClick={() => setSelectedKey(keyData.key)}
+      style={{ marginLeft: `${level * 20}px` }}
+    >
+      {/* Main content */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          <div className={`p-2 rounded-lg ${getTypeColor(keyData.type)}/20 flex-shrink-0`}>
+            {getTypeIcon(keyData.type)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="min-w-0 flex-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1">
+                        <span 
+                          className="font-mono text-sm font-medium truncate text-foreground cursor-help text-wrap"
+                          title={keyData.key}
+                        >
+                          {keyData.key}
+                        </span>
+                        {keyData.key.length > 30 && (
+                          <span className="text-xs text-muted-foreground flex-shrink-0">
+                            ...
+                          </span>
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-md">
+                      <div className="font-mono text-xs break-all">
+                        {keyData.key}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Badge 
+                variant="secondary" 
+                className={`${getTypeColor(keyData.type)} text-xs font-medium px-2 py-0.5 flex-shrink-0`}
+              >
+                {keyData.type.toUpperCase()}
+              </Badge>
+            </div>
+            
+            {/* Metadata */}
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                <span>{keyData.size?.toLocaleString() || '0'} bytes</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className={`w-1.5 h-1.5 rounded-full ${keyData.ttl > 0 ? 'bg-orange-500' : 'bg-gray-400'}`} />
+                <span>{keyData.ttl > 0 ? `TTL: ${keyData.ttl}s` : "No expiry"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Action buttons */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation()
+              copyKey(keyData.key)
+            }}
+            className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+            title="Copy key"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation()
+              deleteKey(keyData.key)
+            }}
+            className="h-7 w-7 p-0 hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600 dark:hover:text-red-400"
+            title="Delete key"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+
+  // Render a group with its children
+  const renderGroup = (group: KeyGroup, level: number = 0) => {
+    const isExpanded = expandedGroups.has(group.fullPath)
+    const hasChildren = Object.keys(group.children).length > 0 || group.keys.length > 0
+    
+    return (
+      <div key={group.fullPath} className="space-y-2">
+        {/* Group header */}
+        <div
+          className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-muted/50 ${
+            isExpanded ? 'bg-muted/30' : 'bg-card/50'
+          }`}
+          onClick={() => hasChildren && toggleGroup(group.fullPath)}
+          style={{ marginLeft: `${level * 20}px` }}
+        >
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {hasChildren ? (
+              isExpanded ? (
+                <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              )
+            ) : (
+              <div className="w-4 h-4 flex-shrink-0" />
+            )}
+            
+            {isExpanded ? (
+              <FolderOpen className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            ) : (
+              <Folder className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            )}
+            
+            <span className="font-medium text-sm truncate" title={group.fullPath}>
+              {group.name}
+            </span>
+            
+            <Badge variant="outline" className="text-xs">
+              {group.keys.length + Object.values(group.children).reduce((acc, child) => acc + child.keys.length, 0)}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Group content */}
+        {isExpanded && (
+          <div className="space-y-2">
+            {/* Render keys in this group */}
+            {group.keys.map(key => renderKeyItem(key, level + 1))}
+            
+            {/* Render child groups */}
+            {Object.values(group.children).map(childGroup => renderGroup(childGroup, level + 1))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   useEffect(() => {
     loadKeys()
   }, [])
@@ -316,17 +570,39 @@ export function KeyBrowser() {
                 {searchTerm && <span>Search: "{searchTerm}"</span>}
                 {typeFilter !== "all" && <span>Type: {typeFilter}</span>}
               </div>
-              {(searchTerm || typeFilter !== "all") && (
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={clearFilters}
+                  onClick={expandAllGroups}
                   className="h-6 px-2 text-xs"
+                  title="Expand all groups"
                 >
-                  <X className="w-3 h-3 mr-1" />
-                  Clear
+                  <ChevronDown className="w-3 h-3 mr-1" />
+                  Expand All
                 </Button>
-              )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={collapseAllGroups}
+                  className="h-6 px-2 text-xs"
+                  title="Collapse all groups"
+                >
+                  <ChevronRight className="w-3 h-3 mr-1" />
+                  Collapse All
+                </Button>
+                {(searchTerm || typeFilter !== "all") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-6 px-2 text-xs"
+                  >
+                    <X className="w-3 h-3 mr-1" />
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -356,103 +632,19 @@ export function KeyBrowser() {
                   </div>
                 ))
               ) : (
-                filteredKeys.map((keyData) => (
-                <div
-                  key={keyData.key}
-                  className={`group relative p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 ${
-                    selectedKey === keyData.key 
-                      ? `${getTypeBackgroundColor(keyData.type)} ${getTypeBorderColor(keyData.type)} shadow-sm ring-1 ring-current/20 border-l-4 ${getTypeLeftBorderColor(keyData.type)}` 
-                      : `bg-card/50 border-border hover:border-border hover:bg-muted/30`
-                  }`}
-                  onClick={() => setSelectedKey(keyData.key)}
-                >
+                (() => {
+                  const { groups, flatKeys } = groupKeysByNamespace(filteredKeys)
                   
-                  {/* Main content */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 min-w-0 flex-1">
-                      <div className={`p-2 rounded-lg ${getTypeColor(keyData.type)}/20 flex-shrink-0`}>
-                        {getTypeIcon(keyData.type)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="min-w-0 flex-1">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="flex items-center gap-1">
-                                    <span 
-                                      className="font-mono text-sm font-medium truncate text-foreground cursor-help text-wrap"
-                                      title={keyData.key}
-                                    >
-                                      {keyData.key}
-                                    </span>
-                                    {keyData.key.length > 30 && (
-                                      <span className="text-xs text-muted-foreground flex-shrink-0">
-                                        ...
-                                      </span>
-                                    )}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-md">
-                                  <div className="font-mono text-xs break-all">
-                                    {keyData.key}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                          <Badge 
-                            variant="secondary" 
-                            className={`${getTypeColor(keyData.type)} text-xs font-medium px-2 py-0.5 flex-shrink-0`}
-                          >
-                            {keyData.type.toUpperCase()}
-                          </Badge>
-                        </div>
-                        
-                        {/* Metadata */}
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                            <span>{keyData.size?.toLocaleString() || '0'} bytes</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <div className={`w-1.5 h-1.5 rounded-full ${keyData.ttl > 0 ? 'bg-orange-500' : 'bg-gray-400'}`} />
-                            <span>{keyData.ttl > 0 ? `TTL: ${keyData.ttl}s` : "No expiry"}</span>
-                          </div>
-                        </div>
-                      </div>
+                  return (
+                    <div className="space-y-3">
+                      {/* Render flat keys (no namespace) */}
+                      {flatKeys.map(key => renderKeyItem(key, 0))}
+                      
+                      {/* Render grouped keys */}
+                      {Object.values(groups).map(group => renderGroup(group, 0))}
                     </div>
-                    
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          copyKey(keyData.key)
-                        }}
-                        className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                        title="Copy key"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          deleteKey(keyData.key)
-                        }}
-                        className="h-7 w-7 p-0 hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600 dark:hover:text-red-400"
-                        title="Delete key"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                ))
+                  )
+                })()
               )}
 
               {filteredKeys.length === 0 && !isLoading && (
@@ -494,7 +686,7 @@ export function KeyBrowser() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Eye className="w-5 h-5" />
+            <KeyIcon className="w-5 h-5" />
             Key Details
           </CardTitle>
           <CardDescription>View and edit key values</CardDescription>
