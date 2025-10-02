@@ -224,4 +224,14 @@
       background-position: 100% 50%;
     }
   }
+  
+  /* Memory bar shimmer animation */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
 }
