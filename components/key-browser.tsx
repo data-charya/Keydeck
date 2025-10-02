@@ -151,6 +151,69 @@ export function KeyBrowser() {
     }
   }
 
+  const getTypeBorderColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "string":
+        return "border-blue-500 dark:border-blue-400"
+      case "hash":
+        return "border-green-500 dark:border-green-400"
+      case "list":
+        return "border-purple-500 dark:border-purple-400"
+      case "set":
+        return "border-orange-500 dark:border-orange-400"
+      case "zset":
+        return "border-red-500 dark:border-red-400"
+      case "stream":
+        return "border-cyan-500 dark:border-cyan-400"
+      case "rejson-rl":
+        return "border-indigo-500 dark:border-indigo-400"
+      default:
+        return "border-gray-500 dark:border-gray-400"
+    }
+  }
+
+  const getTypeBackgroundColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "string":
+        return "bg-blue-50 dark:bg-blue-950/20"
+      case "hash":
+        return "bg-green-50 dark:bg-green-950/20"
+      case "list":
+        return "bg-purple-50 dark:bg-purple-950/20"
+      case "set":
+        return "bg-orange-50 dark:bg-orange-950/20"
+      case "zset":
+        return "bg-red-50 dark:bg-red-950/20"
+      case "stream":
+        return "bg-cyan-50 dark:bg-cyan-950/20"
+      case "rejson-rl":
+        return "bg-indigo-50 dark:bg-indigo-950/20"
+      default:
+        return "bg-gray-50 dark:bg-gray-950/20"
+    }
+  }
+
+  const getTypeLeftBorderColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "string":
+        return "border-l-blue-500 dark:border-l-blue-400"
+      case "hash":
+        return "border-l-green-500 dark:border-l-green-400"
+      case "list":
+        return "border-l-purple-500 dark:border-l-purple-400"
+      case "set":
+        return "border-l-orange-500 dark:border-l-orange-400"
+      case "zset":
+        return "border-l-red-500 dark:border-l-red-400"
+      case "stream":
+        return "border-l-cyan-500 dark:border-l-cyan-400"
+      case "rejson-rl":
+        return "border-l-indigo-500 dark:border-l-indigo-400"
+      default:
+        return "border-l-gray-500 dark:border-l-gray-400"
+    }
+  }
+
   useEffect(() => {
     loadKeys()
   }, [])
@@ -213,8 +276,25 @@ export function KeyBrowser() {
               <SelectContent>
                 <SelectItem value="all">All Types ({keys.length})</SelectItem>
                 {getUniqueTypes().map((typeInfo) => (
-                  <SelectItem key={typeInfo.type} value={typeInfo.type}>
-                    {typeInfo.type} ({typeInfo.count})
+                  <SelectItem 
+                    key={typeInfo.type} 
+                    value={typeInfo.type}
+                    className={`${typeFilter === typeInfo.type ? getTypeBackgroundColor(typeInfo.type) : ''}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        typeInfo.type.toLowerCase() === 'string' ? 'bg-blue-500' :
+                        typeInfo.type.toLowerCase() === 'hash' ? 'bg-green-500' :
+                        typeInfo.type.toLowerCase() === 'list' ? 'bg-purple-500' :
+                        typeInfo.type.toLowerCase() === 'set' ? 'bg-orange-500' :
+                        typeInfo.type.toLowerCase() === 'zset' ? 'bg-red-500' :
+                        typeInfo.type.toLowerCase() === 'stream' ? 'bg-cyan-500' :
+                        typeInfo.type.toLowerCase() === 'rejson-rl' ? 'bg-indigo-500' :
+                        'bg-gray-500'
+                      }`} />
+                      <span className="capitalize">{typeInfo.type}</span>
+                      <span className="text-muted-foreground">({typeInfo.count})</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -250,8 +330,8 @@ export function KeyBrowser() {
             </div>
           </div>
 
-          <ScrollArea className="h-[500px]">
-            <div className="space-y-3">
+          <ScrollArea className="h-[500px] pr-4">
+            <div className="space-y-3 pr-2">
               {isLoading ? (
                 // Skeleton loading states
                 Array.from({ length: 5 }).map((_, index) => (
@@ -281,8 +361,8 @@ export function KeyBrowser() {
                   key={keyData.key}
                   className={`group relative p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 ${
                     selectedKey === keyData.key 
-                      ? "bg-primary/5 border-primary/30 shadow-sm ring-1 ring-primary/20 border-l-4 border-l-primary" 
-                      : "bg-card/50 border-border/60 hover:border-border hover:bg-muted/30"
+                      ? `${getTypeBackgroundColor(keyData.type)} ${getTypeBorderColor(keyData.type)} shadow-sm ring-1 ring-current/20 border-l-4 ${getTypeLeftBorderColor(keyData.type)}` 
+                      : `bg-card/50 border-border hover:border-border hover:bg-muted/30`
                   }`}
                   onClick={() => setSelectedKey(keyData.key)}
                 >
