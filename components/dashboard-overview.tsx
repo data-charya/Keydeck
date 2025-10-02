@@ -86,7 +86,7 @@ export function DashboardOverview() {
 
   const getMemoryStatus = () => {
     if (!stats) return { status: 'unknown', color: 'gray', message: 'Unknown' }
-    
+
     const percentage = stats.memoryUsagePercentage
     if (percentage >= 90) return { status: 'critical', color: 'red', message: 'Critical' }
     if (percentage >= 75) return { status: 'warning', color: 'yellow', message: 'Warning' }
@@ -96,7 +96,7 @@ export function DashboardOverview() {
 
   const getFragmentationStatus = () => {
     if (!stats) return { status: 'unknown', color: 'gray', message: 'Unknown' }
-    
+
     const ratio = stats.memoryFragmentationRatio
     if (ratio > 1.5) return { status: 'high', color: 'red', message: 'High Fragmentation' }
     if (ratio > 1.2) return { status: 'moderate', color: 'yellow', message: 'Moderate Fragmentation' }
@@ -123,7 +123,7 @@ export function DashboardOverview() {
       }
     }
     const os = osString.toLowerCase()
-    
+
     if (os.includes('linux')) {
       return {
         name: 'Linux',
@@ -294,183 +294,179 @@ export function DashboardOverview() {
         </Card>
       </div>
 
-      {/* Compact Memory Usage Card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <HardDrive className="w-5 h-5 text-blue-500" />
-            Memory Usage
-            <Badge 
-              variant={getMemoryStatus().status === 'critical' ? 'destructive' : 
-                      getMemoryStatus().status === 'warning' ? 'secondary' : 'outline'}
-              className={`ml-2 ${
-                getMemoryStatus().status === 'critical' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                getMemoryStatus().status === 'warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-              }`}
-            >
-              {getMemoryStatus().message}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Main Memory Usage */}
-            <div className="md:col-span-2 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full bg-${getMemoryStatus().color}-500`} />
-                  <span className="font-medium">Current Usage</span>
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+        {/* Compact Memory Usage Card */}
+        <Card className="w-full">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <HardDrive className="w-5 h-5 text-blue-500" />
+              Memory Usage
+              <Badge
+                variant={getMemoryStatus().status === 'critical' ? 'destructive' :
+                  getMemoryStatus().status === 'warning' ? 'secondary' : 'outline'}
+                className={`ml-2 ${getMemoryStatus().status === 'critical' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                    getMemoryStatus().status === 'warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                  }`}
+              >
+                {getMemoryStatus().message}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Main Memory Usage */}
+              <div className="md:col-span-2 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full bg-${getMemoryStatus().color}-500`} />
+                    <span className="font-medium">Current Usage</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xl font-bold">{stats?.usedMemory || "0B"}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {stats?.maxMemoryBytes && stats.maxMemoryBytes > 0 ? `of ${stats.maxMemory}` : 'No limit set'}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xl font-bold">{stats?.usedMemory || "0B"}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {stats?.maxMemoryBytes && stats.maxMemoryBytes > 0 ? `of ${stats.maxMemory}` : 'No limit set'}
+
+                {stats?.maxMemoryBytes && stats.maxMemoryBytes > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="flex items-center gap-1">
+                        Usage:
+                        <span className={`font-semibold transition-colors duration-500 ${stats.memoryUsagePercentage >= 90 ? 'text-red-600 dark:text-red-400' :
+                            stats.memoryUsagePercentage >= 75 ? 'text-yellow-600 dark:text-yellow-400' :
+                              'text-green-600 dark:text-green-400'
+                          }`}>
+                          {stats.memoryUsagePercentage}%
+                        </span>
+                      </span>
+                      <span className="font-mono text-xs">{formatBytes(stats.usedMemoryBytes)} / {formatBytes(stats.maxMemoryBytes)}</span>
+                    </div>
+                    <div className="relative">
+                      <Progress
+                        value={stats.memoryUsagePercentage}
+                        className={`h-2 transition-all duration-1000 ease-out ${stats.memoryUsagePercentage >= 90 ? 'bg-red-100 dark:bg-red-900' :
+                            stats.memoryUsagePercentage >= 75 ? 'bg-yellow-100 dark:bg-yellow-900' :
+                              'bg-green-100 dark:bg-green-900'
+                          }`}
+                      />
+                      {/* Animated shimmer effect */}
+                      <div className={`absolute inset-0 h-2 rounded-full overflow-hidden ${stats.memoryUsagePercentage >= 90 ? 'bg-red-100 dark:bg-red-900' :
+                          stats.memoryUsagePercentage >= 75 ? 'bg-yellow-100 dark:bg-yellow-900' :
+                            'bg-green-100 dark:bg-green-900'
+                        }`}>
+                        <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent ${stats.memoryUsagePercentage >= 90 ? 'opacity-60' :
+                            stats.memoryUsagePercentage >= 75 ? 'opacity-40' :
+                              'opacity-20'
+                          }`}
+                          style={{
+                            animation: 'shimmer 2s ease-in-out infinite',
+                            transform: 'translateX(-100%)',
+                            animationDelay: '0.5s'
+                          }} />
+                      </div>
+                      {/* Pulsing border effect for high usage */}
+                      {stats.memoryUsagePercentage >= 90 && (
+                        <div className="absolute inset-0 h-2 rounded-full border-2 border-red-400 animate-pulse opacity-50" />
+                      )}
+                      {stats.memoryUsagePercentage >= 75 && stats.memoryUsagePercentage < 90 && (
+                        <div className="absolute inset-0 h-2 rounded-full border-2 border-yellow-400 animate-pulse opacity-30" />
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Memory Details */}
+              <div className="space-y-3">
+                <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Peak Memory</span>
+                    <span className="text-sm font-mono">{stats?.usedMemoryPeak || "0B"}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Fragmentation</span>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs ${getFragmentationStatus().status === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                          getFragmentationStatus().status === 'moderate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        }`}
+                    >
+                      {stats?.memoryFragmentationRatio?.toFixed(2)}x
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {getFragmentationStatus().message}
                   </div>
                 </div>
               </div>
-              
-              {stats?.maxMemoryBytes && stats.maxMemoryBytes > 0 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="flex items-center gap-1">
-                      Usage: 
-                      <span className={`font-semibold transition-colors duration-500 ${
-                        stats.memoryUsagePercentage >= 90 ? 'text-red-600 dark:text-red-400' :
-                        stats.memoryUsagePercentage >= 75 ? 'text-yellow-600 dark:text-yellow-400' :
-                        'text-green-600 dark:text-green-400'
-                      }`}>
-                        {stats.memoryUsagePercentage}%
-                      </span>
-                    </span>
-                    <span className="font-mono text-xs">{formatBytes(stats.usedMemoryBytes)} / {formatBytes(stats.maxMemoryBytes)}</span>
-                  </div>
-                  <div className="relative">
-                    <Progress 
-                      value={stats.memoryUsagePercentage} 
-                      className={`h-2 transition-all duration-1000 ease-out ${
-                        stats.memoryUsagePercentage >= 90 ? 'bg-red-100 dark:bg-red-900' :
-                        stats.memoryUsagePercentage >= 75 ? 'bg-yellow-100 dark:bg-yellow-900' :
-                        'bg-green-100 dark:bg-green-900'
-                      }`}
-                    />
-                    {/* Animated shimmer effect */}
-                    <div className={`absolute inset-0 h-2 rounded-full overflow-hidden ${
-                      stats.memoryUsagePercentage >= 90 ? 'bg-red-100 dark:bg-red-900' :
-                      stats.memoryUsagePercentage >= 75 ? 'bg-yellow-100 dark:bg-yellow-900' :
-                      'bg-green-100 dark:bg-green-900'
-                    }`}>
-                      <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent ${
-                        stats.memoryUsagePercentage >= 90 ? 'opacity-60' :
-                        stats.memoryUsagePercentage >= 75 ? 'opacity-40' :
-                        'opacity-20'
-                      }`} 
-                      style={{
-                        animation: 'shimmer 2s ease-in-out infinite',
-                        transform: 'translateX(-100%)',
-                        animationDelay: '0.5s'
-                      }} />
-                    </div>
-                    {/* Pulsing border effect for high usage */}
-                    {stats.memoryUsagePercentage >= 90 && (
-                      <div className="absolute inset-0 h-2 rounded-full border-2 border-red-400 animate-pulse opacity-50" />
-                    )}
-                    {stats.memoryUsagePercentage >= 75 && stats.memoryUsagePercentage < 90 && (
-                      <div className="absolute inset-0 h-2 rounded-full border-2 border-yellow-400 animate-pulse opacity-30" />
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Memory Details */}
-            <div className="space-y-3">
-              <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+        {/* Performance Metrics - More Prominent */}
+        <Card className="border-2 border-purple-200 dark:border-purple-800 w-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <TrendingUp className="w-5 h-5 text-purple-500" />
+              Cache Performance
+            </CardTitle>
+            <CardDescription>Hit/miss statistics and cache efficiency</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Peak Memory</span>
-                  <span className="text-sm font-mono">{stats?.usedMemoryPeak || "0B"}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Fragmentation</span>
-                  <Badge 
-                    variant="outline"
-                    className={`text-xs ${
-                      getFragmentationStatus().status === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                      getFragmentationStatus().status === 'moderate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                    }`}
+                  <span className="text-sm font-medium">Keyspace Hits</span>
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                   >
-                    {stats?.memoryFragmentationRatio?.toFixed(2)}x
+                    {stats?.keyspaceHits?.toLocaleString() || 0}
+                  </Badge>
+                </div>
+                <Progress value={getHitRatio()} className="h-2" />
+                <div className="text-xs text-muted-foreground">Successful cache retrievals</div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Keyspace Misses</span>
+                  <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                    {stats?.keyspaceMisses?.toLocaleString() || 0}
+                  </Badge>
+                </div>
+                <Progress value={100 - getHitRatio()} className="h-2" />
+                <div className="text-xs text-muted-foreground">Failed cache retrievals</div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Hit Ratio</span>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      getHitRatio() > 80
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : getHitRatio() > 60
+                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                    }
+                  >
+                    {getHitRatio()}%
                   </Badge>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {getFragmentationStatus().message}
+                  {getHitRatio() > 80 ? "Excellent performance" : getHitRatio() > 60 ? "Good performance" : "Needs attention"}
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Performance Metrics - More Prominent */}
-      <Card className="border-2 border-purple-200 dark:border-purple-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <TrendingUp className="w-5 h-5 text-purple-500" />
-            Cache Performance
-          </CardTitle>
-          <CardDescription>Hit/miss statistics and cache efficiency</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Keyspace Hits</span>
-                <Badge
-                  variant="secondary"
-                  className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                >
-                  {stats?.keyspaceHits?.toLocaleString() || 0}
-                </Badge>
-              </div>
-              <Progress value={getHitRatio()} className="h-2" />
-              <div className="text-xs text-muted-foreground">Successful cache retrievals</div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Keyspace Misses</span>
-                <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                  {stats?.keyspaceMisses?.toLocaleString() || 0}
-                </Badge>
-              </div>
-              <Progress value={100 - getHitRatio()} className="h-2" />
-              <div className="text-xs text-muted-foreground">Failed cache retrievals</div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Hit Ratio</span>
-                <Badge
-                  variant="secondary"
-                  className={
-                    getHitRatio() > 80
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      : getHitRatio() > 60
-                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                  }
-                >
-                  {getHitRatio()}%
-                </Badge>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {getHitRatio() > 80 ? "Excellent performance" : getHitRatio() > 60 ? "Good performance" : "Needs attention"}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Key Types Distribution - More Prominent */}
@@ -531,8 +527,8 @@ export function DashboardOverview() {
                   {stats?.version || "Unknown"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {stats?.redisMode === 'standalone' ? 'Standalone Mode' : 
-                   stats?.redisMode === 'cluster' ? 'Cluster Mode' : 'Unknown Mode'}
+                  {stats?.redisMode === 'standalone' ? 'Standalone Mode' :
+                    stats?.redisMode === 'cluster' ? 'Cluster Mode' : 'Unknown Mode'}
                 </p>
               </div>
 
