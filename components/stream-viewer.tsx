@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { secureApiRequest } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -31,7 +32,7 @@ export function StreamViewer({ keyName, streamData }: StreamViewerProps) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/redis/stream/${encodeURIComponent(keyName)}`)
+      const response = await secureApiRequest(`/api/redis/stream/${encodeURIComponent(keyName)}`)
       if (!response.ok) {
         throw new Error("Failed to load stream entries")
       }

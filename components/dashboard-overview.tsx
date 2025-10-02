@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { secureApiRequest } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -63,7 +64,7 @@ export function DashboardOverview() {
     setError(null)
 
     try {
-      const response = await fetch("/api/redis/stats")
+      const response = await secureApiRequest("/api/redis/stats")
       if (!response.ok) {
         throw new Error("Failed to load Redis statistics")
       }
@@ -126,9 +127,9 @@ export function DashboardOverview() {
     if (os.includes('linux')) {
       return {
         name: 'Linux',
-        color: 'text-orange-500',
-        bgColor: 'bg-orange-50 dark:bg-orange-950',
-        borderColor: 'border-orange-200 dark:border-orange-800',
+        color: 'text-yellow-500',
+        bgColor: 'bg-yellow-50 dark:bg-yellow-950',
+        borderColor: 'border-yellow-200 dark:border-yellow-800',
         description: 'Linux-based system',
         logo: '🐧'
       }
@@ -428,7 +429,7 @@ export function DashboardOverview() {
               {stats?.os && (
                 <div className={`p-4 rounded-lg border ${getOSInfo(stats.os).bgColor} ${getOSInfo(stats.os).borderColor}`}>
                   <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-lg bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center`}>
+                    <div className={`p-3 rounded-lg bg-white dark:bg-black flex items-center justify-center`}>
                       <div className="text-center">
                         <div className="text-2xl mb-1">{getOSInfo(stats.os).logo}</div>
                       </div>
@@ -436,14 +437,14 @@ export function DashboardOverview() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h5 className="font-bold text-lg">{getOSInfo(stats.os).name}</h5>
-                        <Badge variant="outline" className={`text-xs ${getOSInfo(stats.os).color}`}>
+                        <Badge variant="outline" className={`text-xs ${getOSInfo(stats.os).color} ${getOSInfo(stats.os).bgColor} ${getOSInfo(stats.os).borderColor}`}>
                           {stats.archBits}-bit
                         </Badge>
                       </div>
                       <p className={`text-sm text-muted-foreground mt-1 ${getOSInfo(stats.os).color}`}>
                         {getOSInfo(stats.os).description}
                       </p>
-                      <p className="text-xs font-mono text-muted-foreground mt-1">
+                      <p className="text-xs font-mono text-muted-foreground dark:text-white mt-1">
                         {stats.os}
                       </p>
                     </div>

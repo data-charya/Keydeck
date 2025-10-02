@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { secureApiRequest } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -93,7 +94,7 @@ export function ConnectionDiagnostics({ host, port, username, password, onClose,
 
     // Test 1: Network Connectivity (Basic TCP connection test)
     try {
-      const response = await fetch(`/api/redis/diagnostics/network?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
+      const response = await secureApiRequest(`/api/redis/diagnostics/network?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
       const result = await response.json()
       
       tests[0] = {
@@ -117,7 +118,7 @@ export function ConnectionDiagnostics({ host, port, username, password, onClose,
 
     // Test 2: Port Availability (Redis-specific connection test)
     try {
-      const response = await fetch(`/api/redis/diagnostics/port?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
+      const response = await secureApiRequest(`/api/redis/diagnostics/port?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
       const result = await response.json()
       
       tests[1] = {
@@ -141,7 +142,7 @@ export function ConnectionDiagnostics({ host, port, username, password, onClose,
 
     // Test 3: Redis Server Response (PING test)
     try {
-      const response = await fetch(`/api/redis/diagnostics/ping?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
+      const response = await secureApiRequest(`/api/redis/diagnostics/ping?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
       const result = await response.json()
       
       tests[2] = {
@@ -166,7 +167,7 @@ export function ConnectionDiagnostics({ host, port, username, password, onClose,
     // Test 4: Authentication (if password is provided)
     try {
       const authUrl = `/api/redis/diagnostics/auth?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}${currentConfig.username ? `&username=${encodeURIComponent(currentConfig.username)}` : ''}${currentConfig.password ? `&password=${encodeURIComponent(currentConfig.password)}` : ''}`
-      const response = await fetch(authUrl)
+      const response = await secureApiRequest(authUrl)
       const result = await response.json()
       
       tests[3] = {

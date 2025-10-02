@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { secureApiRequest } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -38,7 +39,7 @@ export function KeyValueViewer({ keyName, onKeyDeleted }: KeyValueViewerProps) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/redis/keys/${encodeURIComponent(keyName)}`)
+      const response = await secureApiRequest(`/api/redis/keys/${encodeURIComponent(keyName)}`)
       if (!response.ok) {
         throw new Error("Failed to load key details")
       }
@@ -57,7 +58,7 @@ export function KeyValueViewer({ keyName, onKeyDeleted }: KeyValueViewerProps) {
     if (!keyDetails) return
 
     try {
-      const response = await fetch(`/api/redis/keys/${encodeURIComponent(keyName)}`, {
+      const response = await secureApiRequest(`/api/redis/keys/${encodeURIComponent(keyName)}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

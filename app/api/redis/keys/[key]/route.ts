@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getRedisClient, getKeyInfo } from "@/lib/redis"
+import { withAPISecurity } from "@/lib/api-security"
 
-export async function GET(request: NextRequest, { params }: { params: { key: string } }) {
+async function getKeyHandler(request: NextRequest, { params }: { params: { key: string } }) {
   try {
     const key = decodeURIComponent(params.key)
     const redisClient = getRedisClient()
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: { key: str
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { key: string } }) {
+async function putKeyHandler(request: NextRequest, { params }: { params: { key: string } }) {
   try {
     const key = decodeURIComponent(params.key)
     const { value, type } = await request.json()
@@ -103,7 +104,7 @@ export async function PUT(request: NextRequest, { params }: { params: { key: str
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { key: string } }) {
+async function deleteKeyHandler(request: NextRequest, { params }: { params: { key: string } }) {
   try {
     const key = decodeURIComponent(params.key)
     const redisClient = getRedisClient()
@@ -129,3 +130,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { key: 
     }, { status: 500 })
   }
 }
+
+export const GET = withAPISecurity(getKeyHandler)
+export const PUT = withAPISecurity(putKeyHandler)
+export const DELETE = withAPISecurity(deleteKeyHandler)

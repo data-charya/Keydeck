@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { getRedisClient, getAllKeys } from "@/lib/redis"
+import { withAPISecurity } from "@/lib/api-security"
 
-export async function GET() {
+async function getKeysHandler() {
   try {
     const redisClient = getRedisClient()
     if (!redisClient) {
@@ -21,3 +22,5 @@ export async function GET() {
     }, { status: 500 })
   }
 }
+
+export const GET = withAPISecurity(getKeysHandler)

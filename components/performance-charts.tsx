@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { secureApiRequest } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -71,7 +72,7 @@ export function PerformanceCharts() {
 
   const collectData = async () => {
     try {
-      const response = await fetch("/api/redis/stats")
+      const response = await secureApiRequest("/api/redis/stats")
       if (!response.ok) {
         throw new Error("Failed to load Redis statistics")
       }

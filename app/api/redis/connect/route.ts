@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectToRedis, disconnectFromRedis, parseRedisUri } from "@/lib/redis"
 import { getDetailedErrorInfo } from "@/lib/error-translator"
+import { withAPISecurity } from "@/lib/api-security"
 
-export async function POST(request: NextRequest) {
+async function connectHandler(request: NextRequest) {
   try {
     const requestData = await request.json()
     const { uri, host, port, username, password, database, tls, connectTimeout, commandTimeout, maxRetriesPerRequest } = requestData
@@ -62,3 +63,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const POST = withAPISecurity(connectHandler)

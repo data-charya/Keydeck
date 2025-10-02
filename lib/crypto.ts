@@ -88,15 +88,44 @@ export async function encryptData(data: string, password: string): Promise<strin
  */
 export async function decryptData(encryptedData: string, password: string): Promise<string> {
   try {
+    // Validate input
+    if (!encryptedData || typeof encryptedData !== 'string') {
+      throw new Error('Invalid encrypted data: data is empty or not a string')
+    }
+    
+    if (!password || typeof password !== 'string') {
+      throw new Error('Invalid password: password is empty or not a string')
+    }
+
     // Convert from base64
-    const combined = new Uint8Array(
-      atob(encryptedData).split('').map(char => char.charCodeAt(0))
-    )
+    let combined: Uint8Array
+    try {
+      combined = new Uint8Array(
+        atob(encryptedData).split('').map(char => char.charCodeAt(0))
+      )
+    } catch (base64Error) {
+      throw new Error(`Invalid base64 data: ${base64Error instanceof Error ? base64Error.message : 'Unknown error'}`)
+    }
+
+    // Validate minimum length (salt + iv + some encrypted data)
+    const minLength = 16 + IV_LENGTH + 16 // salt + iv + minimum encrypted data
+    if (combined.length < minLength) {
+      throw new Error(`Data too short: expected at least ${minLength} bytes, got ${combined.length}`)
+    }
 
     // Extract salt, iv, and encrypted data
     const salt = combined.slice(0, 16)
     const iv = combined.slice(16, 16 + IV_LENGTH)
     const encrypted = combined.slice(16 + IV_LENGTH)
+
+    console.debug('Decryption parameters:', {
+      dataLength: encryptedData.length,
+      combinedLength: combined.length,
+      saltLength: salt.length,
+      ivLength: iv.length,
+      encryptedLength: encrypted.length,
+      passwordLength: password.length
+    })
 
     const key = await deriveKey(password, salt)
     const decryptedData = await crypto.subtle.decrypt(
@@ -113,7 +142,21 @@ export async function decryptData(encryptedData: string, password: string): Prom
     return decoder.decode(decryptedData)
   } catch (error) {
     console.warn('Decryption failed:', error)
-    throw new Error('Failed to decrypt data - invalid password or corrupted data')
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('OperationError') || error.message.includes('InvalidAccessError')) {
+        throw new Error('Failed to decrypt data - invalid password or corrupted data')
+      } else if (error.message.includes('base64')) {
+        throw new Error('Failed to decrypt data - invalid base64 encoding')
+      } else if (error.message.includes('too short')) {
+        throw new Error('Failed to decrypt data - data appears to be corrupted')
+      } else {
+        throw new Error(`Failed to decrypt data: ${error.message}`)
+      }
+    }
+    
+    throw new Error('Failed to decrypt data - unknown error occurred')
   }
 }
 
@@ -151,7 +194,17 @@ export function generateEncryptionPassword(): string {
   const baseHash = Math.abs(hash).toString(36)
   const additionalEntropy = Math.abs(combined.length * 7).toString(36)
   
-  return baseHash + additionalEntropy + 'redis-gui-2024'
+  const password = baseHash + additionalEntropy + 'redis-gui-2024'
+  
+  console.debug('Generated encryption password:', {
+    passwordLength: password.length,
+    baseHash,
+    additionalEntropy,
+    stableFactorsCount: stableFactors.length,
+    combinedLength: combined.length
+  })
+  
+  return password
 }
 
 /**
@@ -291,14 +344,27 @@ export class SecureStorage {
       }
       
       const password = this.getEncryptionPassword()
+      console.debug(`Attempting to decrypt data for key: ${key}`)
       const decrypted = await decryptData(encrypted, password)
       return JSON.parse(decrypted)
     } catch (error) {
-      console.warn('Failed to retrieve encrypted data, clearing corrupted data:', error)
+      console.warn(`Failed to retrieve encrypted data for key '${key}', clearing corrupted data:`, error)
+      
+      // Log additional debugging information
+      if (error instanceof Error) {
+        console.warn('Decryption error details:', {
+          message: error.message,
+          stack: error.stack,
+          key: key,
+          encryptedDataLength: localStorage.getItem(key)?.length || 0
+        })
+      }
+      
       // If decryption fails, the data might be corrupted or password changed
       // Clear the corrupted data and return null to allow the app to continue
       try {
         localStorage.removeItem(key)
+        console.info(`Cleared corrupted data for key: ${key}`)
       } catch (clearError) {
         console.warn('Failed to clear corrupted data:', clearError)
       }
@@ -338,11 +404,14 @@ export function clearCorruptedData(): void {
   }
 
   const keysToCheck = [
-    'redis-connections',
+    'redis-connections-encrypted',
+    'redis-connections-fallback',
     'redis-active-connection',
     'redis-connection-history'
   ]
 
+  console.info('Clearing potentially corrupted data from localStorage...')
+  
   keysToCheck.forEach(key => {
     try {
       const data = localStorage.getItem(key)
@@ -350,6 +419,7 @@ export function clearCorruptedData(): void {
         // Try to parse as JSON first (for unencrypted data)
         try {
           JSON.parse(data)
+          console.debug(`Key ${key} contains valid JSON data`)
         } catch {
           // If it's not valid JSON, it might be encrypted data
           // Try to decrypt it, and if it fails, remove it
@@ -364,4 +434,34 @@ export function clearCorruptedData(): void {
       localStorage.removeItem(key)
     }
   })
+}
+
+/**
+ * Force clear all Redis-related data from localStorage
+ * Use this when you want to start fresh
+ */
+export function clearAllRedisData(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  console.info('Clearing all Redis-related data from localStorage...')
+  
+  const keys = Object.keys(localStorage)
+  const redisKeys = keys.filter(key => 
+    key.startsWith('redis-') || 
+    key.includes('redis') ||
+    key.includes('connection')
+  )
+  
+  redisKeys.forEach(key => {
+    try {
+      localStorage.removeItem(key)
+      console.debug(`Removed key: ${key}`)
+    } catch (error) {
+      console.warn(`Failed to remove key ${key}:`, error)
+    }
+  })
+  
+  console.info(`Cleared ${redisKeys.length} Redis-related keys from localStorage`)
 }

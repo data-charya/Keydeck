@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getRedisClient, getStreamEntries } from "@/lib/redis"
+import { withAPISecurity } from "@/lib/api-security"
 
-export async function GET(
+async function getStreamHandler(
   request: NextRequest,
   { params }: { params: { key: string } }
 ) {
@@ -32,3 +33,5 @@ export async function GET(
     )
   }
 }
+
+export const GET = withAPISecurity(getStreamHandler)

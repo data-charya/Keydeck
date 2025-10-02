@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createRedisClient } from "@/lib/redis"
+import { withAPISecurity } from "@/lib/api-security"
 
-export async function GET(request: NextRequest) {
+async function networkHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const host = searchParams.get('host') || 'localhost'
@@ -35,3 +36,5 @@ export async function GET(request: NextRequest) {
     }, { status: 500 })
   }
 }
+
+export const GET = withAPISecurity(networkHandler)

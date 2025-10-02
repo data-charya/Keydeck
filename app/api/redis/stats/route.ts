@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { getRedisClient, getRedisInfo, getAllKeys } from "@/lib/redis"
+import { withAPISecurity } from "@/lib/api-security"
 
-export async function GET() {
+async function getStatsHandler() {
   try {
     const redisClient = getRedisClient()
     if (!redisClient) {
@@ -86,6 +87,8 @@ export async function GET() {
     }, { status: 500 })
   }
 }
+
+export const GET = withAPISecurity(getStatsHandler)
 
 function getTypeColor(type: string): string {
   switch (type.toLowerCase()) {

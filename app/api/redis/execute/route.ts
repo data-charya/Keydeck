@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getRedisClient, executeRedisCommand } from "@/lib/redis"
+import { withAPISecurity } from "@/lib/api-security"
 
-export async function POST(request: NextRequest) {
+async function executeHandler(request: NextRequest) {
   let trimmedCommand = ""
   
   try {
@@ -111,3 +112,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const POST = withAPISecurity(executeHandler)

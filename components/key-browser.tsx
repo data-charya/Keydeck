@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { secureApiRequest } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,7 +57,7 @@ export function KeyBrowser() {
     setError(null)
 
     try {
-      const response = await fetch("/api/redis/keys")
+      const response = await secureApiRequest("/api/redis/keys")
       if (!response.ok) {
         throw new Error("Failed to load keys")
       }
@@ -73,7 +74,7 @@ export function KeyBrowser() {
 
   const deleteKey = async (key: string) => {
     try {
-      const response = await fetch(`/api/redis/keys/${encodeURIComponent(key)}`, {
+      const response = await secureApiRequest(`/api/redis/keys/${encodeURIComponent(key)}`, {
         method: "DELETE",
       })
 

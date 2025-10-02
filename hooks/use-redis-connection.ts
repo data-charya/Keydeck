@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect } from "react"
 import type { RedisConfig } from "@/lib/redis-uri"
 import { generateConnectionName, parseRedisUri } from "@/lib/redis-uri"
 import { getSecureStorage } from "@/lib/client-crypto"
+import { clearAllRedisData } from "@/lib/crypto"
+import { secureApiRequest } from "@/lib/api-client"
 
 interface RedisConnection extends RedisConfig {
   id: string
@@ -70,11 +72,21 @@ export function useRedisConnection() {
           }
         }
       } catch (error) {
+        console.warn('Failed to load connections from secure storage:', error)
         // If decryption fails, clear corrupted data
         try {
           const secureStorage = await getSecureStorage()
           secureStorage.removeItem(STORAGE_KEY)
+          console.info('Cleared corrupted encrypted connection data')
         } catch (clearError) {
+          console.warn('Failed to clear corrupted data:', clearError)
+        }
+        
+        // Also try to clear any fallback data that might be corrupted
+        try {
+          localStorage.removeItem(FALLBACK_STORAGE_KEY)
+        } catch (fallbackClearError) {
+          console.warn('Failed to clear fallback data:', fallbackClearError)
         }
       }
     }
@@ -118,7 +130,7 @@ export function useRedisConnection() {
     try {
       
       // Test the connection
-      const response = await fetch("/api/redis/connect", {
+      const response = await secureApiRequest("/api/redis/connect", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -251,6 +263,16 @@ export function useRedisConnection() {
     }))
   }, [])
 
+  const clearAllData = useCallback(() => {
+    console.info('Clearing all Redis connection data...')
+    clearAllRedisData()
+    setConnectionManager({
+      connections: [],
+      activeConnectionId: null,
+    })
+    setIsConnected(false)
+  }, [])
+
   // Try to restore connection from stored connections
   const restoreConnection = useCallback(async (connection: RedisConnection) => {
     try {
@@ -281,5 +303,6 @@ export function useRedisConnection() {
     updateConnectionName,
     updateConnection,
     restoreConnection,
+    clearAllData,
   }
 }

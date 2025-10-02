@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
+import { secureApiRequest } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -123,7 +124,7 @@ export function RedisConsole() {
 
     try {
       
-      const response = await fetch("/api/redis/execute", {
+      const response = await secureApiRequest("/api/redis/execute", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

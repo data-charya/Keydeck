@@ -1,6 +1,7 @@
 "use client"
 import { useEffect } from "react"
 import Image from 'next/image'
+import { initializeApiSecurity } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -32,6 +33,11 @@ export default function RedisGUI() {
     updateConnection,
     restoreConnection
   } = useRedisConnection()
+
+  // Initialize API security on app startup
+  useEffect(() => {
+    initializeApiSecurity()
+  }, [])
 
   return (
     <div className="min-h-screen bg-background">
