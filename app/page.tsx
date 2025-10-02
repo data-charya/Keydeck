@@ -255,73 +255,75 @@ export default function RedisGUI() {
               </TabsContent>
 
               <TabsContent value="settings" className="mt-0">
-                <div className="max-w-4xl space-y-6 animate-in fade-in-0 duration-300">
-                  <ConnectionManager
-                    connections={connections}
-                    activeConnectionId={activeConnectionId}
-                    onConnect={connect}
-                    onSwitchConnection={switchConnection}
-                    onDeleteConnection={deleteConnection}
-                    onUpdateConnectionName={updateConnectionName}
-                    onUpdateConnection={updateConnection}
-                  />
+                <div className="space-y-6 animate-in fade-in-0 duration-300">
+                  <div className="flex flex-wrap gap-4">
+                    <ConnectionManager
+                      connections={connections}
+                      activeConnectionId={activeConnectionId}
+                      onConnect={connect}
+                      onSwitchConnection={switchConnection}
+                      onDeleteConnection={deleteConnection}
+                      onUpdateConnectionName={updateConnectionName}
+                      onUpdateConnection={updateConnection}
+                    />
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Database className="w-5 h-5" />
-                        Current Connection
-                      </CardTitle>
-                      <CardDescription>Details about your active Redis connection</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 border rounded-lg space-y-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full" />
-                            <span className="font-medium">Connection Details</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            <p>Name: {connection?.name}</p>
-                            <div className="flex items-center gap-1">
-                              <span>Host:</span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="truncate max-w-[200px] font-mono">
-                                      {connection?.host}
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="max-w-md">
-                                    <div className="font-mono text-xs break-all">
-                                      {connection?.host}
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Database className="w-5 h-5" />
+                          Current Connection
+                        </CardTitle>
+                        <CardDescription>Details about your active Redis connection</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="p-4 border rounded-lg space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full" />
+                              <span className="font-medium">Connection Details</span>
                             </div>
-                            <p>Port: {connection?.port}</p>
-                            <p>Database: {connection?.database || 0}</p>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <p>Name: {connection?.name}</p>
+                              <div className="flex items-center gap-1">
+                                <span>Host:</span>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="truncate max-w-[200px] font-mono">
+                                        {connection?.host}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-md">
+                                      <div className="font-mono text-xs break-all">
+                                        {connection?.host}
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                              <p>Port: {connection?.port}</p>
+                              <p>Database: {connection?.database || 0}</p>
+                            </div>
+                            <Button variant="outline" onClick={disconnect} size="sm" className="mt-2 bg-transparent">
+                              Disconnect
+                            </Button>
                           </div>
-                          <Button variant="outline" onClick={disconnect} size="sm" className="mt-2 bg-transparent">
-                            Disconnect
-                          </Button>
-                        </div>
 
-                        <div className="p-4 border rounded-lg space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Activity className="w-4 h-4 text-blue-500" />
-                            <span className="font-medium">Connection Status</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            <p>Status: Connected</p>
-                            <p>Uptime: Active</p>
-                            <p>Last Connected: {connection?.lastConnected ? new Date(connection.lastConnected).toLocaleString() : 'Unknown'}</p>
+                          <div className="p-4 border rounded-lg space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Activity className="w-4 h-4 text-blue-500" />
+                              <span className="font-medium">Connection Status</span>
+                            </div>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <p>Status: Connected</p>
+                              <p>Uptime: Active</p>
+                              <p>Last Connected: {connection?.lastConnected ? new Date(connection.lastConnected).toLocaleString() : 'Unknown'}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
 
                   <SecuritySettings />
 
