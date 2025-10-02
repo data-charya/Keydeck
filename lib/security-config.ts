@@ -8,17 +8,43 @@ export const SECURITY_CONFIG = {
   apiKey: process.env.REDIS_GUI_API_KEY || 'redis-gui-secure-key-2024',
   
   // Allowed Origins
-  allowedOrigins: [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'https://localhost:3000',
-    'https://127.0.0.1:3000',
-    // Add your production domains here
-    ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()) : []),
-    // Add common production patterns
-    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-    ...(process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : []),
-  ],
+  allowedOrigins: (() => {
+    const baseOrigins = [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'https://localhost:3000',
+      'https://127.0.0.1:3000',
+    ]
+    
+    // Add environment-based origins
+    const envOrigins = process.env.ALLOWED_ORIGINS ? 
+      process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()) : []
+    
+    const vercelOrigins = process.env.VERCEL_URL ? 
+      [`https://${process.env.VERCEL_URL}`] : []
+    
+    // Add common Vercel patterns
+    const vercelPatterns = [
+      'https://redash-peach.vercel.app',
+      'https://redash-peach.vercel.app/',
+    ]
+    
+    const appUrlOrigins = process.env.NEXT_PUBLIC_APP_URL ? 
+      [process.env.NEXT_PUBLIC_APP_URL] : []
+    
+    // Combine all origins
+    const allOrigins = [...baseOrigins, ...envOrigins, ...vercelOrigins, ...vercelPatterns, ...appUrlOrigins]
+    
+    // Add both with and without trailing slash for each origin
+    const normalizedOrigins = new Set<string>()
+    allOrigins.forEach(origin => {
+      normalizedOrigins.add(origin)
+      normalizedOrigins.add(origin.replace(/\/$/, '')) // without trailing slash
+      normalizedOrigins.add(origin + '/') // with trailing slash
+    })
+    
+    return Array.from(normalizedOrigins)
+  })(),
   
   // Rate Limiting
   rateLimit: {

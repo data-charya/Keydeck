@@ -90,7 +90,18 @@ function isRefererAllowed(referer: string | null): boolean {
   try {
     const refererUrl = new URL(referer)
     const refererOrigin = `${refererUrl.protocol}//${refererUrl.host}`
-    return SECURITY_CONFIG.allowedOrigins.includes(refererOrigin)
+    
+    // Check direct match
+    if (SECURITY_CONFIG.allowedOrigins.includes(refererOrigin)) {
+      return true
+    }
+    
+    // Check with trailing slash variations
+    const withSlash = refererOrigin + '/'
+    const withoutSlash = refererOrigin.replace(/\/$/, '')
+    
+    return SECURITY_CONFIG.allowedOrigins.includes(withSlash) || 
+           SECURITY_CONFIG.allowedOrigins.includes(withoutSlash)
   } catch {
     return false
   }
@@ -168,6 +179,8 @@ export function withAPISecurity(handler: (request: NextRequest, ...args: any[]) 
       
       if (!skipOriginCheck && !isOriginAllowed(origin) && !isRefererAllowed(referer)) {
         console.warn(`Blocked request from unauthorized origin: ${origin || 'none'} or referer: ${referer || 'none'}`)
+        console.warn(`Origin allowed: ${isOriginAllowed(origin)}`)
+        console.warn(`Referer allowed: ${isRefererAllowed(referer)}`)
         console.warn(`Allowed origins: ${SECURITY_CONFIG.allowedOrigins.join(', ')}`)
         return NextResponse.json(
           { 
@@ -175,6 +188,8 @@ export function withAPISecurity(handler: (request: NextRequest, ...args: any[]) 
             details: {
               origin: origin || 'none',
               referer: referer || 'none',
+              originAllowed: isOriginAllowed(origin),
+              refererAllowed: isRefererAllowed(referer),
               allowedOrigins: SECURITY_CONFIG.allowedOrigins
             }
           },
