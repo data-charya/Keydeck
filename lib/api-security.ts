@@ -178,21 +178,8 @@ export function withAPISecurity(handler: (request: NextRequest, ...args: any[]) 
       const skipOriginCheck = process.env.NODE_ENV === 'development' || process.env.DISABLE_ORIGIN_CHECK === 'true'
       
       if (!skipOriginCheck && !isOriginAllowed(origin) && !isRefererAllowed(referer)) {
-        console.warn(`Blocked request from unauthorized origin: ${origin || 'none'} or referer: ${referer || 'none'}`)
-        console.warn(`Origin allowed: ${isOriginAllowed(origin)}`)
-        console.warn(`Referer allowed: ${isRefererAllowed(referer)}`)
-        console.warn(`Allowed origins: ${SECURITY_CONFIG.allowedOrigins.join(', ')}`)
         return NextResponse.json(
-          { 
-            error: 'Unauthorized origin',
-            details: {
-              origin: origin || 'none',
-              referer: referer || 'none',
-              originAllowed: isOriginAllowed(origin),
-              refererAllowed: isRefererAllowed(referer),
-              allowedOrigins: SECURITY_CONFIG.allowedOrigins
-            }
-          },
+          { error: 'Unauthorized origin' },
           { status: 403 }
         )
       }
@@ -200,7 +187,6 @@ export function withAPISecurity(handler: (request: NextRequest, ...args: any[]) 
       // 2. Rate limiting
       const clientIP = getClientIP(request)
       if (!checkRateLimit(clientIP)) {
-        console.warn(`Rate limit exceeded for IP: ${clientIP}`)
         return NextResponse.json(
           { error: 'Rate limit exceeded' },
           { status: 429 }
@@ -211,7 +197,6 @@ export function withAPISecurity(handler: (request: NextRequest, ...args: any[]) 
       // Uncomment the following lines if you want to require API key
       /*
       if (!validateAPIKey(request)) {
-        console.warn(`Invalid API key from IP: ${clientIP}`)
         return NextResponse.json(
           { error: 'Invalid API key' },
           { status: 401 }
@@ -223,7 +208,6 @@ export function withAPISecurity(handler: (request: NextRequest, ...args: any[]) 
       if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
         const csrfToken = request.headers.get(SECURITY_CONFIG.csrf.headerName)
         if (!csrfToken || !validateCSRFToken(csrfToken)) {
-          console.warn(`Invalid CSRF token from IP: ${clientIP}`)
           return NextResponse.json(
             { error: 'Invalid CSRF token' },
             { status: 403 }
@@ -250,7 +234,6 @@ export function withAPISecurity(handler: (request: NextRequest, ...args: any[]) 
       return response
       
     } catch (error) {
-      console.error('API Security middleware error:', error)
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

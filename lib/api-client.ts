@@ -21,7 +21,7 @@ export async function fetchCSRFToken(): Promise<string> {
     
     const data = await response.json()
     csrfToken = data.csrfToken
-    return csrfToken
+    return csrfToken || ''
   } catch (error) {
     console.error('Error fetching CSRF token:', error)
     throw error
@@ -35,7 +35,7 @@ export async function getCSRFToken(): Promise<string> {
   if (!csrfToken) {
     await fetchCSRFToken()
   }
-  return csrfToken!
+  return csrfToken || ''
 }
 
 /**
@@ -109,14 +109,9 @@ export function isOriginAllowed(): boolean {
  * Initialize API security (call this on app startup)
  */
 export async function initializeApiSecurity(): Promise<void> {
-  if (!isOriginAllowed()) {
-    console.warn('Current origin is not in the allowed list for API security')
-  }
-  
   try {
     await fetchCSRFToken()
-    console.debug('API security initialized successfully')
   } catch (error) {
-    console.error('Failed to initialize API security:', error)
+    // Silent fail - security will still work without CSRF for GET requests
   }
 }

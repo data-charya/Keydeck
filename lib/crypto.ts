@@ -118,14 +118,6 @@ export async function decryptData(encryptedData: string, password: string): Prom
     const iv = combined.slice(16, 16 + IV_LENGTH)
     const encrypted = combined.slice(16 + IV_LENGTH)
 
-    console.debug('Decryption parameters:', {
-      dataLength: encryptedData.length,
-      combinedLength: combined.length,
-      saltLength: salt.length,
-      ivLength: iv.length,
-      encryptedLength: encrypted.length,
-      passwordLength: password.length
-    })
 
     const key = await deriveKey(password, salt)
     const decryptedData = await crypto.subtle.decrypt(
@@ -194,17 +186,7 @@ export function generateEncryptionPassword(): string {
   const baseHash = Math.abs(hash).toString(36)
   const additionalEntropy = Math.abs(combined.length * 7).toString(36)
   
-  const password = baseHash + additionalEntropy + 'redis-gui-2024'
-  
-  console.debug('Generated encryption password:', {
-    passwordLength: password.length,
-    baseHash,
-    additionalEntropy,
-    stableFactorsCount: stableFactors.length,
-    combinedLength: combined.length
-  })
-  
-  return password
+  return baseHash + additionalEntropy + 'redis-gui-2024'
 }
 
 /**
@@ -344,29 +326,15 @@ export class SecureStorage {
       }
       
       const password = this.getEncryptionPassword()
-      console.debug(`Attempting to decrypt data for key: ${key}`)
       const decrypted = await decryptData(encrypted, password)
       return JSON.parse(decrypted)
     } catch (error) {
-      console.warn(`Failed to retrieve encrypted data for key '${key}', clearing corrupted data:`, error)
-      
-      // Log additional debugging information
-      if (error instanceof Error) {
-        console.warn('Decryption error details:', {
-          message: error.message,
-          stack: error.stack,
-          key: key,
-          encryptedDataLength: localStorage.getItem(key)?.length || 0
-        })
-      }
-      
       // If decryption fails, the data might be corrupted or password changed
       // Clear the corrupted data and return null to allow the app to continue
       try {
         localStorage.removeItem(key)
-        console.info(`Cleared corrupted data for key: ${key}`)
       } catch (clearError) {
-        console.warn('Failed to clear corrupted data:', clearError)
+        // Silent fail
       }
       return null
     }
@@ -410,8 +378,6 @@ export function clearCorruptedData(): void {
     'redis-connection-history'
   ]
 
-  console.info('Clearing potentially corrupted data from localStorage...')
-  
   keysToCheck.forEach(key => {
     try {
       const data = localStorage.getItem(key)
@@ -419,18 +385,15 @@ export function clearCorruptedData(): void {
         // Try to parse as JSON first (for unencrypted data)
         try {
           JSON.parse(data)
-          console.debug(`Key ${key} contains valid JSON data`)
         } catch {
           // If it's not valid JSON, it might be encrypted data
           // Try to decrypt it, and if it fails, remove it
           secureStorage.getItem(key).catch(() => {
-            console.warn(`Removing corrupted data for key: ${key}`)
             localStorage.removeItem(key)
           })
         }
       }
     } catch (error) {
-      console.warn(`Error checking key ${key}:`, error)
       localStorage.removeItem(key)
     }
   })
@@ -445,8 +408,6 @@ export function clearAllRedisData(): void {
     return
   }
 
-  console.info('Clearing all Redis-related data from localStorage...')
-  
   const keys = Object.keys(localStorage)
   const redisKeys = keys.filter(key => 
     key.startsWith('redis-') || 
@@ -457,11 +418,8 @@ export function clearAllRedisData(): void {
   redisKeys.forEach(key => {
     try {
       localStorage.removeItem(key)
-      console.debug(`Removed key: ${key}`)
     } catch (error) {
-      console.warn(`Failed to remove key ${key}:`, error)
+      // Silent fail
     }
   })
-  
-  console.info(`Cleared ${redisKeys.length} Redis-related keys from localStorage`)
 }
