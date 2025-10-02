@@ -43,7 +43,42 @@ export function validateCSRFToken(token: string): boolean {
  */
 function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false
-  return SECURITY_CONFIG.allowedOrigins.includes(origin)
+  
+  // Direct match
+  if (SECURITY_CONFIG.allowedOrigins.includes(origin)) {
+    return true
+  }
+  
+  // Check for wildcard patterns
+  for (const allowedOrigin of SECURITY_CONFIG.allowedOrigins) {
+    if (allowedOrigin.includes('*')) {
+      const pattern = allowedOrigin.replace(/\*/g, '.*')
+      const regex = new RegExp(`^${pattern}$`)
+      if (regex.test(origin)) {
+        return true
+      }
+    }
+  }
+  
+  // Check if origin is a subdomain of allowed origins
+  for (const allowedOrigin of SECURITY_CONFIG.allowedOrigins) {
+    try {
+      const allowedUrl = new URL(allowedOrigin)
+      const originUrl = new URL(origin)
+      
+      // Check if same protocol and hostname is a subdomain
+      if (allowedUrl.protocol === originUrl.protocol && 
+          (originUrl.hostname === allowedUrl.hostname || 
+           originUrl.hostname.endsWith('.' + allowedUrl.hostname))) {
+        return true
+      }
+    } catch {
+      // Invalid URL, skip
+      continue
+    }
+  }
+  
+  return false
 }
 
 /**
@@ -128,10 +163,21 @@ export function withAPISecurity(handler: (request: NextRequest, ...args: any[]) 
       const origin = request.headers.get('origin')
       const referer = request.headers.get('referer')
       
-      if (!isOriginAllowed(origin) && !isRefererAllowed(referer)) {
+      // Skip origin check in development or if DISABLE_ORIGIN_CHECK is set
+      const skipOriginCheck = process.env.NODE_ENV === 'development' || process.env.DISABLE_ORIGIN_CHECK === 'true'
+      
+      if (!skipOriginCheck && !isOriginAllowed(origin) && !isRefererAllowed(referer)) {
         console.warn(`Blocked request from unauthorized origin: ${origin || 'none'} or referer: ${referer || 'none'}`)
+        console.warn(`Allowed origins: ${SECURITY_CONFIG.allowedOrigins.join(', ')}`)
         return NextResponse.json(
-          { error: 'Unauthorized origin' },
+          { 
+            error: 'Unauthorized origin',
+            details: {
+              origin: origin || 'none',
+              referer: referer || 'none',
+              allowedOrigins: SECURITY_CONFIG.allowedOrigins
+            }
+          },
           { status: 403 }
         )
       }
