@@ -161,12 +161,12 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
           </div>
           
           <Tabs value={connectionMethod} onValueChange={(value) => setConnectionMethod(value as "form" | "uri")}>
-            <TabsList className="grid w-full grid-cols-2 h-12 p-2">
-              <TabsTrigger value="form" className="flex items-center gap-2 hover:cursor-pointer">
+            <TabsList className="grid w-full grid-cols-2 gap-2 h-12 p-2">
+              <TabsTrigger value="form" className="flex items-center dark:data-[state=active]:bg-slate gap-2 hover:cursor-pointer">
                 <Settings className="w-4 h-4" />
                 Form
               </TabsTrigger>
-              <TabsTrigger value="uri" className="flex items-center gap-2 hover:cursor-pointer">
+              <TabsTrigger value="uri" className="flex items-center gap-2 dark:data-[state=active]:bg-slate hover:cursor-pointer">
                 <Link className="w-4 h-4" />
                 URI
               </TabsTrigger>
