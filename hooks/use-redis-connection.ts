@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react"
 import type { RedisConfig } from "@/lib/redis-uri"
-import { generateConnectionName } from "@/lib/redis-uri"
+import { generateConnectionName, parseRedisUri } from "@/lib/redis-uri"
 import { getSecureStorage } from "@/lib/client-crypto"
 
 interface RedisConnection extends RedisConfig {
@@ -135,14 +135,31 @@ export function useRedisConnection() {
 
       const result = await response.json()
 
+      // For URI connections, we need to parse the URI to get the proper config
+      let finalConfig = config
+      if ('uri' in config && config.uri && typeof config.uri === 'string') {
+        try {
+          finalConfig = parseRedisUri(config.uri)
+        } catch (error) {
+          console.warn('Failed to parse URI for connection object:', error)
+          // Fallback to basic config
+          const { uri, ...configWithoutUri } = config as any
+          finalConfig = { 
+            host: 'unknown', 
+            port: 6379,
+            ...configWithoutUri
+          }
+        }
+      }
+
       // Create connection object
-      const connectionId = `${config.host}:${config.port}:${config.database || 0}`
+      const connectionId = `${finalConfig.host}:${finalConfig.port}:${finalConfig.database || 0}`
       
       // Generate a meaningful connection name if none provided
-      const connectionName_ = connectionName || generateConnectionName(config)
+      const connectionName_ = connectionName || generateConnectionName(finalConfig)
       
       const newConnection: RedisConnection = {
-        ...config,
+        ...finalConfig,
         id: connectionId,
         name: connectionName_,
         isConnected: true,

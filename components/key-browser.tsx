@@ -332,7 +332,7 @@ export function KeyBrowser() {
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                            <span>{keyData.size.toLocaleString()} bytes</span>
+                            <span>{keyData.size?.toLocaleString() || '0'} bytes</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <div className={`w-1.5 h-1.5 rounded-full ${keyData.ttl > 0 ? 'bg-orange-500' : 'bg-gray-400'}`} />

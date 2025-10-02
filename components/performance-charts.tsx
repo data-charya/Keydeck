@@ -404,7 +404,7 @@ export function PerformanceCharts() {
                         cy="50%"
                         outerRadius={100}
                         dataKey="value"
-                        label={({ name, value }) => `${name}: ${value.toLocaleString()}`}
+                        label={({ name, value }) => `${name}: ${value?.toLocaleString() || '0'}`}
                       >
                         {pieData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />

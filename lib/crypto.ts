@@ -112,7 +112,7 @@ export async function decryptData(encryptedData: string, password: string): Prom
     const decoder = new TextDecoder()
     return decoder.decode(decryptedData)
   } catch (error) {
-    console.error('Decryption failed:', error)
+    console.warn('Decryption failed:', error)
     throw new Error('Failed to decrypt data - invalid password or corrupted data')
   }
 }
@@ -294,9 +294,14 @@ export class SecureStorage {
       const decrypted = await decryptData(encrypted, password)
       return JSON.parse(decrypted)
     } catch (error) {
-      console.error('Failed to retrieve encrypted data:', error)
+      console.warn('Failed to retrieve encrypted data, clearing corrupted data:', error)
       // If decryption fails, the data might be corrupted or password changed
-      // Return null to allow the app to continue
+      // Clear the corrupted data and return null to allow the app to continue
+      try {
+        localStorage.removeItem(key)
+      } catch (clearError) {
+        console.warn('Failed to clear corrupted data:', clearError)
+      }
       return null
     }
   }
@@ -322,3 +327,41 @@ export class SecureStorage {
 
 // Export a singleton instance
 export const secureStorage = new SecureStorage()
+
+/**
+ * Clear all corrupted encrypted data from localStorage
+ * This can be called when decryption errors occur
+ */
+export function clearCorruptedData(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const keysToCheck = [
+    'redis-connections',
+    'redis-active-connection',
+    'redis-connection-history'
+  ]
+
+  keysToCheck.forEach(key => {
+    try {
+      const data = localStorage.getItem(key)
+      if (data) {
+        // Try to parse as JSON first (for unencrypted data)
+        try {
+          JSON.parse(data)
+        } catch {
+          // If it's not valid JSON, it might be encrypted data
+          // Try to decrypt it, and if it fails, remove it
+          secureStorage.getItem(key).catch(() => {
+            console.warn(`Removing corrupted data for key: ${key}`)
+            localStorage.removeItem(key)
+          })
+        }
+      }
+    } catch (error) {
+      console.warn(`Error checking key ${key}:`, error)
+      localStorage.removeItem(key)
+    }
+  })
+}

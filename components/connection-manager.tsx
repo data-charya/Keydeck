@@ -96,11 +96,32 @@ export function ConnectionManager({
   }
 
   const handleSwitchConnection = async (connectionId: string) => {
+    const connection = connections.find(conn => conn.id === connectionId)
+    
+    // If clicking on the currently active connection, show a different message
+    if (activeConnectionId === connectionId) {
+      toast({
+        title: "Already Connected",
+        description: `"${connection?.name}" is already the active connection`,
+        variant: "default",
+      })
+      return
+    }
+    
+    // Check if the connection is inactive
+    if (connection && !connection.isConnected) {
+      toast({
+        title: "Connection Inactive",
+        description: `"${connection.name}" is currently disconnected. Click to reconnect.`,
+        variant: "default",
+      })
+    }
+    
     try {
       await onSwitchConnection(connectionId)
       toast({
         title: "Switched connection",
-        description: "Successfully switched to the selected connection",
+        description: `Successfully switched to "${connection?.name}"`,
       })
     } catch (error) {
       toast({
@@ -198,7 +219,7 @@ export function ConnectionManager({
                       ? "bg-primary/5 border-primary shadow-sm"
                       : "hover:bg-muted/50 hover:shadow-sm"
                   }`}
-                  onClick={() => activeConnectionId !== connection.id && handleSwitchConnection(connection.id)}
+                  onClick={() => handleSwitchConnection(connection.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
