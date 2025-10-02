@@ -269,9 +269,9 @@ export function KeyBrowser() {
               />
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[140px]">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Type" />
+              <SelectTrigger className="w-[180px] min-w-[180px]">
+                <Filter className="w-4 h-4 mr-2 flex-shrink-0" />
+                <SelectValue placeholder="Type" className="truncate" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types ({keys.length})</SelectItem>
