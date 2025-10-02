@@ -45,6 +45,13 @@ export function KeyBrowser() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [performanceInfo, setPerformanceInfo] = useState<{
+    totalKeys: number
+    loadedKeys: number
+    isBasicMode: boolean
+    estimatedLoadTime: string
+  } | null>(null)
+  const [useBasicMode, setUseBasicMode] = useState(false)
   const { toast } = useToast()
 
   // Clear all filters
@@ -151,12 +158,20 @@ export function KeyBrowser() {
       .sort((a, b) => a.type.localeCompare(b.type))
   }
 
-  const loadKeys = async () => {
+  const loadKeys = async (basicMode: boolean = false) => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const response = await secureApiRequest("/api/redis/keys")
+      const params = new URLSearchParams()
+      if (basicMode) {
+        params.append('basic', 'true')
+        params.append('limit', '50000') // Higher limit for basic mode
+      } else {
+        params.append('limit', '10000') // Lower limit for full mode
+      }
+
+      const response = await secureApiRequest(`/api/redis/keys?${params.toString()}`)
       if (!response.ok) {
         throw new Error("Failed to load keys")
       }
@@ -164,6 +179,17 @@ export function KeyBrowser() {
       const data = await response.json()
       setKeys(data.keys || [])
       setFilteredKeys(data.keys || [])
+      setPerformanceInfo(data.performance || null)
+      setUseBasicMode(basicMode)
+      
+      // Show performance warning for large datasets
+      if (data.performance?.totalKeys > 1000) {
+        toast({
+          title: "Large Dataset Detected",
+          description: `Loaded ${data.performance.totalKeys} keys. Using optimized mode for better performance.`,
+          duration: 5000,
+        })
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load keys")
     } finally {
@@ -371,7 +397,14 @@ export function KeyBrowser() {
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                <span>{keyData.size?.toLocaleString() || '0'} bytes</span>
+                <span>
+                  {keyData.size > 0 
+                    ? `${keyData.size.toLocaleString()} bytes` 
+                    : useBasicMode 
+                      ? "Size: Click to load" 
+                      : "0 bytes"
+                  }
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <div className={`w-1.5 h-1.5 rounded-full ${keyData.ttl > 0 ? 'bg-orange-500' : 'bg-gray-400'}`} />
@@ -503,12 +536,35 @@ export function KeyBrowser() {
               <CardTitle className="flex items-center gap-2">
                 <Database className="w-5 h-5" />
                 Redis Keys
+                {performanceInfo && (
+                  <Badge variant="outline" className="ml-2">
+                    {performanceInfo.totalKeys.toLocaleString()} keys
+                  </Badge>
+                )}
               </CardTitle>
-              <CardDescription>Browse and manage your Redis keys</CardDescription>
+              <CardDescription>
+                Browse and manage your Redis keys
+                {performanceInfo?.isBasicMode && (
+                  <span className="text-orange-600 dark:text-orange-400 ml-2">
+                    (Optimized mode for large datasets)
+                  </span>
+                )}
+              </CardDescription>
             </div>
-            <Button onClick={loadKeys} disabled={isLoading} size="sm" variant="outline">
-              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => loadKeys(!useBasicMode)} 
+                disabled={isLoading} 
+                size="sm" 
+                variant="outline"
+                title={useBasicMode ? "Load with full details" : "Load in optimized mode"}
+              >
+                {useBasicMode ? "Full Mode" : "Basic Mode"}
+              </Button>
+              <Button onClick={() => loadKeys(useBasicMode)} disabled={isLoading} size="sm" variant="outline">
+                <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -558,6 +614,32 @@ export function KeyBrowser() {
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {performanceInfo && performanceInfo.totalKeys > 5000 && (
+            <Alert>
+              <AlertDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <strong>Large Dataset Performance Notice:</strong> You have {performanceInfo.totalKeys.toLocaleString()} keys. 
+                    {performanceInfo.isBasicMode 
+                      ? " Using optimized mode for better performance. Key sizes are loaded on demand."
+                      : " Consider switching to Basic Mode for better performance with large datasets."
+                    }
+                  </div>
+                  {!performanceInfo.isBasicMode && (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => loadKeys(true)}
+                      className="ml-4"
+                    >
+                      Switch to Basic Mode
+                    </Button>
+                  )}
+                </div>
+              </AlertDescription>
             </Alert>
           )}
 

@@ -340,27 +340,110 @@ export async function getKeyInfo(key: string) {
   }
 }
 
-// Helper function to get all keys with their info
-export async function getAllKeys(pattern: string = '*'): Promise<any[]> {
+// Helper function to get all keys with their info using SCAN (non-blocking)
+export async function getAllKeys(pattern: string = '*', limit: number = 10000): Promise<any[]> {
   const client = connectionManager.getClient()
   if (!client) {
     throw new Error('Redis client not connected')
   }
 
   try {
-    const keys = await client.keys(pattern)
-    const keyInfos = await Promise.all(
-      keys.map(async (key) => {
-        try {
-          return await getKeyInfo(key)
-        } catch (error) {
-          console.error(`Error getting info for key ${key}:`, error)
-          return null
+    const keys: string[] = []
+    let cursor = '0'
+    
+    // Use SCAN instead of KEYS for non-blocking iteration
+    do {
+      const result = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 1000)
+      cursor = result[0]
+      keys.push(...result[1])
+      
+      // Safety limit to prevent memory issues
+      if (keys.length >= limit) {
+        console.warn(`Key limit reached (${limit}). Consider using more specific patterns.`)
+        break
+      }
+    } while (cursor !== '0')
+
+    // Batch process keys in chunks to avoid overwhelming Redis
+    const chunkSize = 100
+    const keyInfos: any[] = []
+    
+    for (let i = 0; i < keys.length; i += chunkSize) {
+      const chunk = keys.slice(i, i + chunkSize)
+      const chunkInfos = await Promise.all(
+        chunk.map(async (key) => {
+          try {
+            return await getKeyInfo(key)
+          } catch (error) {
+            console.error(`Error getting info for key ${key}:`, error)
+            return null
+          }
+        })
+      )
+      keyInfos.push(...chunkInfos.filter(info => info !== null))
+    }
+
+    return keyInfos
+  } catch (error) {
+    throw new Error(`Failed to get keys: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+// Optimized function to get keys with basic info only (for large datasets)
+export async function getKeysBasic(pattern: string = '*', limit: number = 10000): Promise<any[]> {
+  const client = connectionManager.getClient()
+  if (!client) {
+    throw new Error('Redis client not connected')
+  }
+
+  try {
+    const keys: string[] = []
+    let cursor = '0'
+    
+    // Use SCAN for non-blocking iteration
+    do {
+      const result = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 1000)
+      cursor = result[0]
+      keys.push(...result[1])
+      
+      if (keys.length >= limit) {
+        console.warn(`Key limit reached (${limit}). Consider using more specific patterns.`)
+        break
+      }
+    } while (cursor !== '0')
+
+    // Get basic info only (type and TTL) in batches
+    const chunkSize = 200
+    const keyInfos: any[] = []
+    
+    for (let i = 0; i < keys.length; i += chunkSize) {
+      const chunk = keys.slice(i, i + chunkSize)
+      
+      // Use pipeline for better performance
+      const pipeline = client.pipeline()
+      chunk.forEach(key => {
+        pipeline.type(key)
+        pipeline.ttl(key)
+      })
+      
+      const results = await pipeline.exec()
+      
+      chunk.forEach((key, index) => {
+        const typeResult = results?.[index * 2]
+        const ttlResult = results?.[index * 2 + 1]
+        
+        if (typeResult && !typeResult[0] && ttlResult && !ttlResult[0]) {
+          keyInfos.push({
+            key,
+            type: typeResult[1],
+            ttl: ttlResult[1],
+            size: 0, // Will be loaded on demand
+          })
         }
       })
-    )
+    }
 
-    return keyInfos.filter(info => info !== null)
+    return keyInfos
   } catch (error) {
     throw new Error(`Failed to get keys: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
