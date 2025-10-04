@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Database, Terminal, Search, Settings, Activity, BarChart3, Clock, HardDrive, TrendingUp, Plus } from "lucide-react"
+import { Database, Terminal, Search, Settings, Activity, BarChart3, Clock, HardDrive, TrendingUp, Plus, Lightbulb } from "lucide-react"
 import { ConnectionDiagnostics } from "@/components/connection-diagnostics"
 import { SecuritySettings } from "@/components/security-settings"
 import { KeyBrowser } from "@/components/key-browser"
@@ -16,6 +16,7 @@ import { PerformanceCharts } from "@/components/performance-charts"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { ThemeSelector } from "@/components/theme-selector"
 import { EncryptedProfilesManager } from "@/components/encrypted-profiles-manager"
+import { SchemaAdvisor } from "@/components/schema-advisor"
 import { useEncryptedProfiles } from "@/hooks/use-encrypted-profiles"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
@@ -239,7 +240,7 @@ export default function RedisGUI() {
         ) : (
           <Tabs defaultValue="overview" className="w-full">
             <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 py-4">
-              <TabsList className="grid w-full grid-cols-5 rounded-xl mb-6 bg-muted/50 backdrop-blur-sm border border-border/50 shadow-sm h-12 gap-2 p-2">
+              <TabsList className="grid w-full grid-cols-6 rounded-xl mb-6 bg-muted/50 backdrop-blur-sm border border-border/50 shadow-sm h-12 gap-2 p-2">
                 <TabsTrigger
                   value="overview"
                   className="flex items-center gap-2"
@@ -267,6 +268,13 @@ export default function RedisGUI() {
                 >
                   <Terminal className="w-4 h-4" />
                   <span>Console</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="advisor"
+                  className="flex items-center gap-2"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  <span>Schema Advisor</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="settings"
@@ -300,6 +308,12 @@ export default function RedisGUI() {
               <TabsContent value="console" className="mt-0">
                 <div className="animate-in fade-in-0 duration-300">
                   <RedisConsole isConnected={isConnected} connection={connection} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="advisor" className="mt-0">
+                <div className="animate-in fade-in-0 duration-300">
+                  <SchemaAdvisor />
                 </div>
               </TabsContent>
 
