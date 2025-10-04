@@ -203,8 +203,8 @@ async function getSchemaAnalysisHandler(request: NextRequest) {
     const isLocalDevelopment = !isProduction && !isWebDeployment
     
     // Set limits based on deployment type
-    const maxKeysWebDeployment = parseInt(process.env.SCHEMA_ADVISOR_MAX_KEYS_WEB || '10000')
-    const maxKeysProduction = parseInt(process.env.SCHEMA_ADVISOR_MAX_KEYS || '50000')
+    const maxKeysWebDeployment = parseInt(process.env.SCHEMA_ADVISOR_MAX_KEYS_WEB || '1000')
+    const maxKeysProduction = parseInt(process.env.SCHEMA_ADVISOR_MAX_KEYS || '5000')
     const maxKeysDevelopment = parseInt(process.env.SCHEMA_ADVISOR_MAX_KEYS_DEV || '100000')
 
     // Web deployment has the strictest limits
