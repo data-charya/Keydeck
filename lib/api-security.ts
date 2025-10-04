@@ -11,31 +11,59 @@ import { SECURITY_CONFIG } from './security-config'
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 
 // CSRF token store (in production, use a secure session store)
-const csrfTokens = new Set<string>()
+interface CSRFToken {
+  token: string
+  expiresAt: number
+}
+
+const csrfTokens = new Map<string, CSRFToken>()
 
 /**
- * Generate a secure CSRF token
+ * Generate a secure CSRF token with expiration
  */
 export function generateCSRFToken(): string {
   const array = new Uint8Array(SECURITY_CONFIG.csrf.tokenLength)
   crypto.getRandomValues(array)
   const token = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
-  csrfTokens.add(token)
   
-  // Clean up old tokens (keep only last 1000)
-  if (csrfTokens.size > 1000) {
-    const tokensArray = Array.from(csrfTokens)
-    tokensArray.slice(0, tokensArray.length - 1000).forEach(token => csrfTokens.delete(token))
-  }
+  // Token expires in 15 minutes
+  const expiresAt = Date.now() + (15 * 60 * 1000)
+  csrfTokens.set(token, { token, expiresAt })
+  
+  // Clean up expired tokens
+  cleanupExpiredTokens()
   
   return token
 }
 
 /**
- * Validate CSRF token
+ * Clean up expired CSRF tokens
+ */
+function cleanupExpiredTokens(): void {
+  const now = Date.now()
+  for (const [token, tokenData] of csrfTokens.entries()) {
+    if (tokenData.expiresAt < now) {
+      csrfTokens.delete(token)
+    }
+  }
+}
+
+/**
+ * Validate and consume CSRF token (one-time use)
  */
 export function validateCSRFToken(token: string): boolean {
-  return csrfTokens.has(token)
+  const tokenData = csrfTokens.get(token)
+  if (tokenData) {
+    // Check if token is expired
+    if (tokenData.expiresAt < Date.now()) {
+      csrfTokens.delete(token)
+      return false
+    }
+    // Consume the token after validation
+    csrfTokens.delete(token)
+    return true
+  }
+  return false
 }
 
 /**

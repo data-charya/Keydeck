@@ -45,38 +45,40 @@ export async function secureApiRequest(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  // Ensure we have a CSRF token for state-changing operations
-  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method || 'GET')) {
-    const token = await getCSRFToken()
-    options.headers = {
-      ...options.headers,
-      'X-CSRF-Token': token,
-    }
-  }
+  let retryCount = 0
+  const maxRetries = 2
   
-  // Add credentials to all requests
-  options.credentials = 'include'
-  
-  const response = await fetch(url, options)
-  
-  // If we get a 403 with CSRF error, refresh token and retry once
-  if (response.status === 403) {
-    const errorData = await response.json().catch(() => ({}))
-    if (errorData.error === 'Invalid CSRF token') {
-      csrfToken = null // Clear the invalid token
-      const newToken = await fetchCSRFToken()
-      
-      // Retry the request with the new token
+  while (retryCount <= maxRetries) {
+    // Ensure we have a CSRF token for state-changing operations
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method || 'GET')) {
+      const token = await getCSRFToken()
       options.headers = {
         ...options.headers,
-        'X-CSRF-Token': newToken,
+        'X-CSRF-Token': token,
       }
-      
-      return fetch(url, options)
     }
+    
+    // Add credentials to all requests
+    options.credentials = 'include'
+    
+    const response = await fetch(url, options)
+    
+    // If we get a 403 with CSRF error, refresh token and retry
+    if (response.status === 403 && retryCount < maxRetries) {
+      const errorData = await response.json().catch(() => ({}))
+      if (errorData.error === 'Invalid CSRF token') {
+        csrfToken = null // Clear the invalid token
+        await fetchCSRFToken() // Get a fresh token
+        retryCount++
+        continue // Retry the request
+      }
+    }
+    
+    return response
   }
   
-  return response
+  // If we've exhausted retries, return the last response
+  return fetch(url, options)
 }
 
 /**
