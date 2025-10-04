@@ -398,7 +398,7 @@ export function EncryptedProfilesManager({
               <p>No encrypted profiles saved</p>
               <p className="text-sm">Create your first encrypted connection profile</p>
               <Button 
-                className="mt-4" 
+                className="mt-4 hover:cursor-pointer" 
                 onClick={() => setShowCreateProfileDialog(true)}
               >
                 <Plus className="w-4 h-4 mr-2" />
