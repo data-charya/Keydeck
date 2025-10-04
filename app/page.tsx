@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import Image from 'next/image'
-import { initializeApiSecurity } from "@/lib/api-client"
+import { initializeApiSecurity, secureApiRequest } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -52,7 +52,25 @@ export default function RedisGUI() {
         await disconnect()
       }
       
-      // Simulate connection logic - in real implementation, this would connect to Redis
+      // Call the actual Redis connect API
+      const response = await secureApiRequest('/api/redis/connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(config),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to connect to Redis')
+      }
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || 'Connection failed')
+      }
+      
       setConnection(config)
       setIsConnected(true)
       setActiveConnectionId(profileId || name || 'default')
