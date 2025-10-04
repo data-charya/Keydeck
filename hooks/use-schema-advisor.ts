@@ -63,15 +63,28 @@ interface SchemaAnalysis {
   }[]
 }
 
+interface SchemaError {
+  error: string
+  message: string
+  suggestion: string
+  totalKeys: number
+  limit: number
+  environment: string
+  deploymentType?: string
+  dockerCommand?: string
+}
+
 export function useSchemaAdvisor() {
   const [analysis, setAnalysis] = useState<SchemaAnalysis | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [schemaError, setSchemaError] = useState<SchemaError | null>(null)
   const { toast } = useToast()
 
   const runAnalysis = async () => {
     setLoading(true)
     setError(null)
+    setSchemaError(null)
     
     try {
       const response = await secureApiRequest('/api/redis/schema-advisor', {
@@ -87,7 +100,12 @@ export function useSchemaAdvisor() {
           description: `Analyzed ${data.metadata.totalKeys} keys with ${data.analysis.recommendations.length} recommendations`,
         })
       } else {
-        setError(data.error || 'Failed to analyze schema')
+        // Check if it's a dataset size error
+        if (response.status === 413 && data.totalKeys && data.limit) {
+          setSchemaError(data as SchemaError)
+        } else {
+          setError(data.error || 'Failed to analyze schema')
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze schema')
@@ -99,12 +117,14 @@ export function useSchemaAdvisor() {
   const clearAnalysis = () => {
     setAnalysis(null)
     setError(null)
+    setSchemaError(null)
   }
 
   return {
     analysis,
     loading,
     error,
+    schemaError,
     runAnalysis,
     clearAnalysis
   }

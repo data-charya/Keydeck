@@ -59,6 +59,52 @@ RATE_LIMIT_MAX_REQUESTS=100
 
 # Optional: Disable origin check (NOT recommended for production)
 # DISABLE_ORIGIN_CHECK=true
+
+# Schema Advisor Limits (for large datasets)
+SCHEMA_ADVISOR_MAX_KEYS_WEB=10000      # Web deployment limit (most restrictive)
+SCHEMA_ADVISOR_MAX_KEYS=50000          # Production deployment limit
+SCHEMA_ADVISOR_MAX_KEYS_DEV=100000     # Development limit (most permissive)
+
+# Deployment Type Configuration
+NODE_ENV=production
+IS_WEB_DEPLOYMENT=true                 # Set to 'true' for web deployments (Vercel, Netlify, etc.)
+```
+
+## Deployment Types and Schema Advisor Limits
+
+The application supports different deployment types with appropriate limits for schema analysis:
+
+### Web Deployment (`IS_WEB_DEPLOYMENT=true`)
+- **Use case**: Shared hosting platforms (Vercel, Netlify, etc.)
+- **Default limit**: 10,000 keys
+- **Reasoning**: Shared resources, multiple users, performance protection
+- **Environment**: `NODE_ENV=production` + `IS_WEB_DEPLOYMENT=true`
+
+### Production Deployment (`NODE_ENV=production` + `IS_WEB_DEPLOYMENT=false`)
+- **Use case**: Dedicated production servers
+- **Default limit**: 50,000 keys
+- **Reasoning**: Dedicated resources, controlled environment
+- **Environment**: `NODE_ENV=production` + `IS_WEB_DEPLOYMENT=false`
+
+### Development (`NODE_ENV=development`)
+- **Use case**: Local development
+- **Default limit**: 100,000 keys
+- **Reasoning**: Local environment, no shared resources
+- **Environment**: `NODE_ENV=development`
+
+### Customizing Limits
+
+You can override the default limits by setting environment variables:
+
+```bash
+# For web deployments
+SCHEMA_ADVISOR_MAX_KEYS_WEB=5000
+
+# For production deployments
+SCHEMA_ADVISOR_MAX_KEYS=25000
+
+# For development
+SCHEMA_ADVISOR_MAX_KEYS_DEV=50000
 ```
 
 ## Platform-Specific Instructions
@@ -66,12 +112,18 @@ RATE_LIMIT_MAX_REQUESTS=100
 ### Vercel
 1. Go to your project dashboard
 2. Navigate to Settings > Environment Variables
-3. Add `ALLOWED_ORIGINS` with your domain
+3. Add these environment variables:
+   - `ALLOWED_ORIGINS` with your domain
+   - `IS_WEB_DEPLOYMENT=true` (for web deployment limits)
+   - `SCHEMA_ADVISOR_MAX_KEYS_WEB=10000` (optional, customize limit)
 4. Redeploy your application
 
 ### Netlify
 1. Go to Site settings > Environment variables
-2. Add `ALLOWED_ORIGINS` with your domain
+2. Add these environment variables:
+   - `ALLOWED_ORIGINS` with your domain
+   - `IS_WEB_DEPLOYMENT=true` (for web deployment limits)
+   - `SCHEMA_ADVISOR_MAX_KEYS_WEB=10000` (optional, customize limit)
 3. Redeploy your site
 
 ### Docker

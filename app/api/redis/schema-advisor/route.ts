@@ -197,6 +197,60 @@ async function getSchemaAnalysisHandler(request: NextRequest) {
       })
     }
 
+    // Environment-based safety check - prevent analyzing too much data
+    const isProduction = process.env.NODE_ENV === 'production'
+    const isWebDeployment = process.env.IS_WEB_DEPLOYMENT === 'true'
+    const isLocalDevelopment = !isProduction && !isWebDeployment
+    
+    // Set limits based on deployment type
+    const maxKeysWebDeployment = parseInt(process.env.SCHEMA_ADVISOR_MAX_KEYS_WEB || '10000')
+    const maxKeysProduction = parseInt(process.env.SCHEMA_ADVISOR_MAX_KEYS || '50000')
+    const maxKeysDevelopment = parseInt(process.env.SCHEMA_ADVISOR_MAX_KEYS_DEV || '100000')
+
+    // Web deployment has the strictest limits
+    if (isWebDeployment && totalKeys > maxKeysWebDeployment) {
+      return NextResponse.json({
+        success: false,
+        error: "Dataset too large for web deployment analysis",
+        message: `Your Redis instance contains ${totalKeys.toLocaleString()} keys, which exceeds the web deployment limit of ${maxKeysWebDeployment.toLocaleString()} keys.`,
+        suggestion: "For large datasets, please run the schema analysis locally using Docker to avoid performance impact on the shared web environment.",
+        totalKeys,
+        limit: maxKeysWebDeployment,
+        environment: "web-deployment",
+        deploymentType: "web",
+        dockerCommand: "docker run -it --rm -v $(pwd):/app -w /app node:18 npm run schema-analyze"
+      }, { status: 413 }) // Payload Too Large
+    }
+
+    // Production deployment limits
+    if (isProduction && !isWebDeployment && totalKeys > maxKeysProduction) {
+      return NextResponse.json({
+        success: false,
+        error: "Dataset too large for production analysis",
+        message: `Your Redis instance contains ${totalKeys.toLocaleString()} keys, which exceeds the production limit of ${maxKeysProduction.toLocaleString()} keys.`,
+        suggestion: "For large datasets, please run the schema analysis locally using Docker to avoid performance impact on your production environment.",
+        totalKeys,
+        limit: maxKeysProduction,
+        environment: "production",
+        deploymentType: "production",
+        dockerCommand: "docker run -it --rm -v $(pwd):/app -w /app node:18 npm run schema-analyze"
+      }, { status: 413 })
+    }
+
+    // Development limits (most permissive)
+    if (isLocalDevelopment && totalKeys > maxKeysDevelopment) {
+      return NextResponse.json({
+        success: false,
+        error: "Dataset too large for development analysis",
+        message: `Your Redis instance contains ${totalKeys.toLocaleString()} keys, which exceeds the development limit of ${maxKeysDevelopment.toLocaleString()} keys.`,
+        suggestion: "Consider using a smaller sample or running analysis locally with Docker for better performance.",
+        totalKeys,
+        limit: maxKeysDevelopment,
+        environment: "development",
+        deploymentType: "local"
+      }, { status: 413 })
+    }
+
     // Sample keys for analysis if dataset is large
     const keysToAnalyze = totalKeys > sampleSize 
       ? keys.sort(() => 0.5 - Math.random()).slice(0, sampleSize)

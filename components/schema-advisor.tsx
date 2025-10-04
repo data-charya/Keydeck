@@ -30,7 +30,7 @@ interface SchemaAdvisorProps {
 }
 
 export function SchemaAdvisor({ className }: SchemaAdvisorProps) {
-  const { analysis, loading, error, runAnalysis } = useSchemaAdvisor()
+  const { analysis, loading, error, schemaError, runAnalysis } = useSchemaAdvisor()
 
   const getRecommendationIcon = (type: string) => {
     switch (type) {
@@ -89,6 +89,101 @@ export function SchemaAdvisor({ className }: SchemaAdvisorProps) {
         <Alert className="mb-6">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {schemaError && (
+        <Alert className="mb-6 border-orange-200 bg-orange-50">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="space-y-4">
+            <div>
+              <h4 className="font-semibold text-orange-800 mb-2">{schemaError.error}</h4>
+              <p className="text-orange-700 mb-3">{schemaError.message}</p>
+              <p className="text-orange-600 text-sm mb-4">{schemaError.suggestion}</p>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg border border-orange-200">
+              <h5 className="font-medium text-gray-800 mb-2 flex items-center gap-2">
+                <Database className="h-4 w-4" />
+                Dataset Information
+              </h5>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Total Keys:</span>
+                  <span className="ml-2 font-mono">{schemaError.totalKeys.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Limit:</span>
+                  <span className="ml-2 font-mono">{schemaError.limit.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Environment:</span>
+                  <span className="ml-2 capitalize">{schemaError.environment}</span>
+                </div>
+                {schemaError.deploymentType && (
+                  <div>
+                    <span className="text-gray-600">Deployment:</span>
+                    <span className="ml-2 capitalize">{schemaError.deploymentType}</span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-gray-600">Excess:</span>
+                  <span className="ml-2 font-mono text-red-600">
+                    +{((schemaError.totalKeys - schemaError.limit) / schemaError.limit * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {schemaError.dockerCommand && (
+              <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm">
+                <h5 className="text-white mb-2 flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Run Locally with Docker:
+                </h5>
+                <div className="space-y-2">
+                  <div className="text-gray-400"># Clone the repository</div>
+                  <div>git clone https://github.com/your-repo/redis-gui.git</div>
+                  <div>cd redis-gui</div>
+                  <div className="text-gray-400"># Run schema analysis locally</div>
+                  <div className="text-yellow-300">{schemaError.dockerCommand}</div>
+                  <div className="text-gray-400"># Or use the provided script</div>
+                  <div className="text-blue-300">./scripts/analyze-schema.sh</div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h5 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                <Lightbulb className="h-4 w-4" />
+                Why This Limit Exists
+              </h5>
+              <ul className="text-blue-700 text-sm space-y-1">
+                {schemaError.deploymentType === 'web' ? (
+                  <>
+                    <li>• Web deployments share resources with other users</li>
+                    <li>• Large datasets can impact the shared web environment</li>
+                    <li>• Schema analysis requires intensive Redis operations</li>
+                    <li>• Local analysis provides better performance and privacy</li>
+                  </>
+                ) : schemaError.deploymentType === 'production' ? (
+                  <>
+                    <li>• Large datasets can impact production Redis performance</li>
+                    <li>• Schema analysis requires scanning all keys and their metadata</li>
+                    <li>• Production environments need stability and reliability</li>
+                    <li>• Local analysis provides better performance and safety</li>
+                  </>
+                ) : (
+                  <>
+                    <li>• Large datasets can impact Redis performance</li>
+                    <li>• Schema analysis requires scanning all keys and their metadata</li>
+                    <li>• Local analysis provides better performance and safety</li>
+                    <li>• You can adjust limits via environment variables if needed</li>
+                  </>
+                )}
+              </ul>
+            </div>
+          </AlertDescription>
         </Alert>
       )}
 
