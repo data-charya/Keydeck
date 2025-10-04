@@ -94,7 +94,7 @@ export function SchemaAdvisor({ className }: SchemaAdvisorProps) {
 
       {analysis && (
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 p-2 h-12">
+          <TabsList className="grid gap-2 w-full grid-cols-4 p-2 h-12">
             <TabsTrigger className="hover:cursor-pointer" value="overview">Overview</TabsTrigger>
             <TabsTrigger className="hover:cursor-pointer" value="recommendations">Recommendations</TabsTrigger>
             <TabsTrigger className="hover:cursor-pointer" value="patterns">Key Patterns</TabsTrigger>
