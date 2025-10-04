@@ -350,14 +350,14 @@ export function EncryptedProfilesManager({
         <CardContent className="p-0">
           {/* Connection Progress */}
           {isConnecting && (
-            <div className="p-4 border-b bg-blue-50/50 dark:bg-blue-950/20">
+            <div className="p-4 border-b bg-primary/5 dark:bg-primary/10">
               <div className="flex items-center gap-3">
-                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 <div>
-                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  <p className="text-sm font-medium text-primary">
                     {connectionProgress}
                   </p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                  <p className="text-xs text-muted-foreground">
                     Please wait while we establish the connection...
                   </p>
                 </div>
@@ -367,15 +367,15 @@ export function EncryptedProfilesManager({
 
           {/* Connection Error */}
           {connectionError && (
-            <div className="p-4 border-b bg-red-50/50 dark:bg-red-950/20">
+            <div className="p-4 border-b bg-destructive/5 dark:bg-destructive/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-500" />
+                  <AlertCircle className="w-5 h-5 text-destructive" />
                   <div>
-                    <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                    <p className="text-sm font-medium text-destructive">
                       Connection Failed
                     </p>
-                    <p className="text-xs text-red-600 dark:text-red-400">
+                    <p className="text-xs text-muted-foreground">
                       {connectionError}
                     </p>
                   </div>
@@ -384,7 +384,7 @@ export function EncryptedProfilesManager({
                   variant="ghost"
                   size="sm"
                   onClick={clearError}
-                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  className="text-destructive hover:text-destructive/80"
                 >
                   Dismiss
                 </Button>
