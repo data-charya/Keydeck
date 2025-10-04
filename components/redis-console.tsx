@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { Terminal, Send, Trash2, Copy, Clock, CheckCircle, XCircle, Info, BookOpen } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { getDetailedErrorInfo } from "@/lib/error-translator"
-import { useRedisConnection } from "@/hooks/use-redis-connection"
+// Removed legacy useRedisConnection import
 import { CommandReference } from "@/components/command-reference"
 
 interface ConsoleEntry {
@@ -92,7 +92,12 @@ const REDIS_COMMANDS = [
   "CONFIG", "COMMAND", "ACL", "LATENCY", "MEMORY", "MODULE", "SLOWLOG", "TIME"
 ]
 
-export function RedisConsole() {
+interface RedisConsoleProps {
+  isConnected: boolean
+  connection: any
+}
+
+export function RedisConsole({ isConnected, connection }: RedisConsoleProps) {
   const [command, setCommand] = useState("")
   const [history, setHistory] = useState<ConsoleEntry[]>([])
   const [commandHistory, setCommandHistory] = useState<string[]>([])
@@ -104,7 +109,6 @@ export function RedisConsole() {
   const inputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
-  const { isConnected, connection } = useRedisConnection()
 
   const executeCommand = async () => {
     if (!command.trim() || isExecuting) return

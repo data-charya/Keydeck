@@ -278,7 +278,7 @@ export default function RedisGUI() {
 
               <TabsContent value="console" className="mt-0">
                 <div className="animate-in fade-in-0 duration-300">
-                  <RedisConsole />
+                  <RedisConsole isConnected={isConnected} connection={connection} />
                 </div>
               </TabsContent>
 
