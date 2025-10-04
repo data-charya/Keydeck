@@ -1,5 +1,5 @@
 "use client"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Image from 'next/image'
 import { initializeApiSecurity } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Database, Terminal, Search, Settings, Activity, BarChart3, Clock, HardDrive, TrendingUp, Plus } from "lucide-react"
-import { ConnectionConfig } from "@/components/connection-config"
-import { ConnectionManager } from "@/components/connection-manager"
 import { ConnectionDiagnostics } from "@/components/connection-diagnostics"
 import { SecuritySettings } from "@/components/security-settings"
 import { KeyBrowser } from "@/components/key-browser"
@@ -16,28 +14,91 @@ import { RedisConsole } from "@/components/redis-console"
 import { DashboardOverview } from "@/components/dashboard-overview"
 import { PerformanceCharts } from "@/components/performance-charts"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useRedisConnection } from "@/hooks/use-redis-connection"
+import { EncryptedProfilesManager } from "@/components/encrypted-profiles-manager"
+import { useEncryptedProfiles } from "@/hooks/use-encrypted-profiles"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function RedisGUI() {
   const {
-    connection,
-    isConnected,
-    connections,
-    activeConnectionId,
-    connect,
-    disconnect,
-    switchConnection,
-    deleteConnection,
-    updateConnectionName,
-    updateConnection,
-    restoreConnection
-  } = useRedisConnection()
+    profiles: encryptedProfiles,
+    isAvailable: encryptedProfilesAvailable,
+    hasPassphrase: hasEncryptedProfiles,
+    isLoading: encryptedProfilesLoading,
+    setPassphrase,
+    saveProfile,
+    loadProfile,
+    deleteProfile,
+    updateProfileMetadata,
+    clearAllProfiles,
+    clearPassphrase,
+  } = useEncryptedProfiles()
+  
+  // Simple connection state for encrypted profiles only
+  const [connection, setConnection] = useState<any>(null)
+  const [isConnected, setIsConnected] = useState(false)
+  const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null)
 
   // Initialize API security on app startup
   useEffect(() => {
     initializeApiSecurity()
   }, [])
+
+  // Connection functions for encrypted profiles only
+  const connect = async (config: any, name?: string, profileId?: string) => {
+    try {
+      // First disconnect from current connection if any
+      if (isConnected && activeConnectionId) {
+        await disconnect()
+      }
+      
+      // Simulate connection logic - in real implementation, this would connect to Redis
+      setConnection(config)
+      setIsConnected(true)
+      setActiveConnectionId(profileId || name || 'default')
+      
+      // Update profile metadata if it's an encrypted profile
+      if (profileId) {
+        await updateProfileMetadata(profileId, { 
+          lastConnected: new Date(),
+          isConnected: true 
+        })
+      }
+    } catch (error) {
+      console.error('Connection failed:', error)
+      throw error
+    }
+  }
+
+  const disconnect = async () => {
+    // Update profile metadata to mark as disconnected (only if profile still exists)
+    if (activeConnectionId) {
+      try {
+        await updateProfileMetadata(activeConnectionId, { 
+          isConnected: false 
+        })
+      } catch (error) {
+        // Profile might not exist anymore (e.g., after clearing all data)
+        // This is expected and not an error - just log it
+        console.log('Profile no longer exists, skipping metadata update')
+      }
+    }
+    
+    setConnection(null)
+    setIsConnected(false)
+    setActiveConnectionId(null)
+  }
+
+  const switchConnection = async (connectionId: string) => {
+    try {
+      const profile = await loadProfile(connectionId)
+      if (profile) {
+        await connect(profile, profile.name, connectionId)
+      }
+    } catch (error) {
+      console.error('Failed to switch connection:', error)
+      throw error
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,7 +132,7 @@ export default function RedisGUI() {
                     variant="secondary"
                     className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800"
                   >
-                    {connection.name}
+                    {connection.name || 'Connected'}
                   </Badge>
                 </div>
               )}
@@ -95,84 +156,32 @@ export default function RedisGUI() {
             {/* Header */}
             <div className="text-center space-y-2">
               <h2 className="text-3xl font-bold text-foreground">Redis Connection</h2>
-              <p className="text-muted-foreground">
-                {connections.length > 0
-                  ? `You have ${connections.length} saved connection${connections.length > 1 ? 's' : ''} available`
-                  : "Connect to your Redis server to get started"
-                }
-              </p>
+            <p className="text-muted-foreground">
+              {encryptedProfilesAvailable && hasEncryptedProfiles
+                ? `You have ${encryptedProfiles.length} encrypted profile${encryptedProfiles.length > 1 ? 's' : ''} available`
+                : "Create encrypted connection profiles to get started"
+              }
+            </p>
             </div>
 
-            {connections.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* New Connection Form */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg font-semibold">New Connection</h3>
-                  </div>
-                  <div className="text-xs text-muted-foreground mb-2">
-                    Create and save a new connection
-                  </div>
-                  <ConnectionConfig onConnect={connect} />
-                </div>
-
-                {/* Right Column - Saved Connections and Diagnostics */}
-                <div className="space-y-6">
-                  {/* Available Connections */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Database className="w-5 h-5 text-primary" />
-                      <h3 className="text-lg font-semibold">Saved Connections</h3>
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        {connections.length}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground mb-2">
-                      Click to connect instantly
-                    </div>
-                    <ConnectionManager
-                      connections={connections}
-                      activeConnectionId={activeConnectionId}
-                      onConnect={connect}
-                      onSwitchConnection={switchConnection}
-                      onDeleteConnection={deleteConnection}
-                      onUpdateConnectionName={updateConnectionName}
-                      onUpdateConnection={updateConnection}
-                    />
-                  </div>
-
-                  {/* Diagnostics Panel */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Terminal className="w-5 h-5 text-primary" />
-                      <h3 className="text-lg font-semibold">Diagnostics</h3>
-                    </div>
-                    <div className="text-xs text-muted-foreground mb-2">
-                      Test connection issues
-                    </div>
-                    <ConnectionDiagnostics
-                      host={connection?.host || "localhost"}
-                      port={connection?.port || 6379}
-                      username={connection?.username}
-                      password={connection?.password}
-                    />
+            {/* Loading State */}
+            {encryptedProfilesLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium">Loading Redash...</p>
+                    <p className="text-sm text-muted-foreground">Setting up secure connection options</p>
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* New Connection Form */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Connect to Redis</h3>
-                  </div>
-                  <div className="text-xs text-muted-foreground mb-2">
-                    Enter your Redis connection details
-                  </div>
-                  <ConnectionConfig onConnect={connect} />
-                </div>
+            ) : encryptedProfilesAvailable ? (
+              <div className="space-y-6 flex flex-col gap-6 flex-wrap">
+                <EncryptedProfilesManager
+                  onConnect={connect}
+                  onSwitchConnection={switchConnection}
+                  activeConnectionId={activeConnectionId || undefined}
+                />
 
                 {/* Diagnostics Panel */}
                 <div className="space-y-4">
@@ -181,14 +190,27 @@ export default function RedisGUI() {
                     <h3 className="text-lg font-semibold">Connection Diagnostics</h3>
                   </div>
                   <div className="text-xs text-muted-foreground mb-2">
-                    Troubleshoot connection issues
+                    Test connection issues
                   </div>
                   <ConnectionDiagnostics
-                    host="localhost"
-                    port={6379}
-                    username=""
-                    password=""
+                    host={connection?.host || "localhost"}
+                    port={connection?.port || 6379}
+                    username={connection?.username}
+                    password={connection?.password}
                   />
+                </div>
+              </div>
+            ) : (
+              /* Fallback for when encrypted profiles are not available */
+              <div className="text-center py-16">
+                <div className="space-y-4">
+                  <Database className="w-16 h-16 mx-auto text-muted-foreground opacity-50" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-muted-foreground">Encrypted Profiles Not Available</h3>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      This feature requires a modern browser with IndexedDB and Web Crypto API support.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -263,15 +285,6 @@ export default function RedisGUI() {
               <TabsContent value="settings" className="mt-0">
                 <div className="space-y-6 animate-in fade-in-0 duration-300">
                   <div className="flex flex-wrap gap-4">
-                    <ConnectionManager
-                      connections={connections}
-                      activeConnectionId={activeConnectionId}
-                      onConnect={connect}
-                      onSwitchConnection={switchConnection}
-                      onDeleteConnection={deleteConnection}
-                      onUpdateConnectionName={updateConnectionName}
-                      onUpdateConnection={updateConnection}
-                    />
 
                     <Card>
                       <CardHeader>
@@ -331,7 +344,7 @@ export default function RedisGUI() {
                     </Card>
                   </div>
 
-                  <SecuritySettings />
+                  <SecuritySettings onDisconnect={disconnect} />
 
                   <Card>
                     <CardHeader>
@@ -375,6 +388,7 @@ export default function RedisGUI() {
           </Tabs>
         )}
       </div>
+
     </div>
   )
 }

@@ -28,21 +28,43 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { getSecureStorage } from "@/lib/client-crypto"
 import { isCryptoSupported } from "@/lib/crypto"
+import { useEncryptedProfiles } from "@/hooks/use-encrypted-profiles"
 
-export function SecuritySettings() {
+interface SecuritySettingsProps {
+  onDisconnect?: () => void
+}
+
+export function SecuritySettings({ onDisconnect }: SecuritySettingsProps = {}) {
   const [isClearing, setIsClearing] = useState(false)
   const [showEncryptionKey, setShowEncryptionKey] = useState(false)
+  const [showClearDialog, setShowClearDialog] = useState(false)
   const { toast } = useToast()
+  const { clearAllProfiles, profiles, isAvailable } = useEncryptedProfiles()
 
   const handleClearAllData = async () => {
     setIsClearing(true)
     try {
+      // Clear both old and new encrypted data
       const secureStorage = getSecureStorage()
       secureStorage.clear()
+      
+      // Clear encrypted profiles if available
+      if (isAvailable) {
+        await clearAllProfiles()
+      }
+      
       toast({
         title: "Data Cleared",
-        description: "All encrypted connection data has been removed from your browser.",
+        description: "All encrypted connection profiles have been removed from your browser.",
       })
+      
+      // Disconnect user and redirect to home page
+      if (onDisconnect) {
+        onDisconnect()
+      }
+      
+      // Close the dialog after successful clearing
+      setShowClearDialog(false)
     } catch (error) {
       toast({
         title: "Error",
@@ -66,7 +88,7 @@ export function SecuritySettings() {
           Security Settings
         </CardTitle>
         <CardDescription>
-          Manage encryption and data security for your Redis connections
+          Manage encryption and data security for your Redis connection profiles stored locally with client-side encryption.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -90,13 +112,12 @@ export function SecuritySettings() {
           <p className="text-sm text-muted-foreground">
             {isCryptoSupported() ? (
               <>
-                All connection data is encrypted using AES-GCM encryption before being stored in your browser's localStorage.
+                All connection data is encrypted using AES-GCM encryption with user-provided passphrases before being stored in IndexedDB. 
                 Your Redis passwords and connection details are never stored in plain text.
               </>
             ) : (
               <>
-                Your browser doesn't support the Web Crypto API. Data is stored with basic encoding (less secure).
-                Consider using a modern browser for better security.
+                Your browser doesn't support the Web Crypto API. This feature requires a modern browser with Web Crypto API support.
               </>
             )}
           </p>
@@ -114,14 +135,14 @@ export function SecuritySettings() {
               <div className="flex items-center gap-2">
                 <Input
                   id="encryption-key"
-                  value="Derived from browser characteristics (not stored)"
+                  value="Derived from user passphrase (not stored)"
                   readOnly
                   className="font-mono text-sm"
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Your encryption key is derived from stable browser characteristics (user agent, screen size, etc.) 
-                and is never stored in localStorage. This ensures your data is encrypted but the key itself is not visible.
+                Encryption keys are derived from your passphrase using PBKDF2 with 100,000 iterations. 
+                Keys are never stored and must be entered on each reload for maximum security.
               </p>
             </div>
           </div>
@@ -138,20 +159,39 @@ export function SecuritySettings() {
                   <li>• AES-GCM 256-bit encryption</li>
                   <li>• PBKDF2 key derivation (100,000 iterations)</li>
                   <li>• Random salt and IV for each encryption</li>
+                  <li>• User-provided passphrase protection</li>
+                  <li>• IndexedDB storage for offline capability</li>
+                  <li>• Passphrase required on every reload</li>
                   <li>• No data sent to external servers</li>
                   <li>• Browser-only encryption/decryption</li>
                 </>
               ) : (
                 <>
-                  <li>• Base64 encoding (fallback mode)</li>
+                  <li>• Web Crypto API not supported</li>
+                  <li>• Modern browser required for encryption</li>
                   <li>• No data sent to external servers</li>
-                  <li>• Browser-only storage</li>
-                  <li>• Limited security (upgrade browser recommended)</li>
                 </>
               )}
             </ul>
           </AlertDescription>
         </Alert>
+
+        {/* Encrypted Profiles Status */}
+        {isAvailable && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-blue-500" />
+              <span className="font-medium">Encrypted Profiles</span>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                {profiles.length} profile{profiles.length !== 1 ? 's' : ''}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Connection profiles are encrypted with your passphrase and stored locally in IndexedDB. 
+              All encryption and decryption happens in your browser - no data is sent to external servers.
+            </p>
+          </div>
+        )}
 
         {/* Data Management */}
         <div className="space-y-4">
@@ -160,7 +200,7 @@ export function SecuritySettings() {
             <span className="font-medium">Data Management</span>
           </div>
           
-          <Dialog>
+          <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
             <DialogTrigger asChild>
               <Button variant="destructive" size="sm">
                 <Trash2 className="w-4 h-4 mr-2" />
@@ -174,7 +214,10 @@ export function SecuritySettings() {
                   Clear All Encrypted Data
                 </DialogTitle>
                 <DialogDescription>
-                  This will permanently delete all your saved Redis connections and encrypted data from this browser.
+                  This will permanently delete all your encrypted connection profiles from this browser.
+                  {isAvailable && profiles.length > 0 && (
+                    <> You currently have {profiles.length} encrypted profile{profiles.length > 1 ? 's' : ''}.</>
+                  )}
                   This action cannot be undone.
                 </DialogDescription>
               </DialogHeader>
@@ -182,11 +225,17 @@ export function SecuritySettings() {
                 <Alert variant="destructive">
                   <AlertTriangle className="w-4 h-4" />
                   <AlertDescription>
-                    <strong>Warning:</strong> This will remove all your saved connections, and you'll need to reconnect to your Redis servers.
+                    <strong>Warning:</strong> This will remove all your encrypted connection profiles, and you'll need to recreate them to connect to your Redis servers.
                   </AlertDescription>
                 </Alert>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline">Cancel</Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowClearDialog(false)}
+                    disabled={isClearing}
+                  >
+                    Cancel
+                  </Button>
                   <Button 
                     variant="destructive" 
                     onClick={handleClearAllData}

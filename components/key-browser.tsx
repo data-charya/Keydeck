@@ -166,9 +166,9 @@ export function KeyBrowser() {
       const params = new URLSearchParams()
       if (basicMode) {
         params.append('basic', 'true')
-        params.append('limit', '50000') // Higher limit for basic mode
+        params.append('limit', '10000') // Higher limit for basic mode
       } else {
-        params.append('limit', '10000') // Lower limit for full mode
+        params.append('limit', '1000') // Lower limit for full mode
       }
 
       const response = await secureApiRequest(`/api/redis/keys?${params.toString()}`)
