@@ -300,7 +300,8 @@ export function EncryptedProfilesManager({
               ) : profiles.length > 0 ? (
                 <Button 
                   variant="outline" 
-                  size="sm" 
+                  size="sm"
+                  className="hover:cursor-pointer"
                   onClick={() => {
                     setPassphraseMode('enter')
                     setPassphraseError(null) // Clear any previous errors
@@ -314,28 +315,28 @@ export function EncryptedProfilesManager({
               {profiles.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="hover:cursor-pointer">
                       <Settings className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setShowCreateProfileDialog(true)}>
+                    <DropdownMenuItem onClick={() => setShowCreateProfileDialog(true)} className="hover:cursor-pointer">
                       <Plus className="w-4 h-4 mr-2" />
                       Create New Profile
                     </DropdownMenuItem>
                     {isUnlocked && (
-                      <DropdownMenuItem onClick={handleChangePassphrase}>
+                      <DropdownMenuItem onClick={handleChangePassphrase} className="hover:cursor-pointer">
                         <Key className="w-4 h-4 mr-2" />
                         Change Passphrase
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => setShowSettingsDialog(true)}>
+                    <DropdownMenuItem onClick={() => setShowSettingsDialog(true)} className="hover:cursor-pointer">
                       <Settings className="w-4 h-4 mr-2" />
                       Storage Settings
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={handleClearAllProfiles}
-                      className="text-red-600 dark:text-red-400"
+                      className="text-red-600 dark:text-red-400 hover:cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Clear All Profiles
@@ -410,7 +411,7 @@ export function EncryptedProfilesManager({
               <p>Profiles are locked</p>
               <p className="text-sm">Enter your passphrase to unlock your connection profiles</p>
               <Button 
-                className="mt-4" 
+                className="mt-4 hover:cursor-pointer" 
                 onClick={() => {
                   setPassphraseMode('enter')
                   setPassphraseError(null) // Clear any previous errors
