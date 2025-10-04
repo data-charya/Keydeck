@@ -155,7 +155,7 @@ export default function RedisGUI() {
           <div className="max-w-6xl mx-auto space-y-6">
             {/* Header */}
             <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold text-foreground">Redis Connection</h2>
+              <h2 className="text-3xl font-bold text-foreground">What happens in the browser stays in the browser</h2>
             <p className="text-muted-foreground">
               {encryptedProfilesAvailable && hasEncryptedProfiles
                 ? `You have ${encryptedProfiles.length} encrypted profile${encryptedProfiles.length > 1 ? 's' : ''} available`
