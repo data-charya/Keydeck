@@ -33,7 +33,7 @@ export default function RedisGUI() {
     clearAllProfiles,
     clearPassphrase,
   } = useEncryptedProfiles()
-  
+
   // Simple connection state for encrypted profiles only
   const [connection, setConnection] = useState<any>(null)
   const [isConnected, setIsConnected] = useState(false)
@@ -51,7 +51,7 @@ export default function RedisGUI() {
       if (isConnected && activeConnectionId) {
         await disconnect()
       }
-      
+
       // Call the actual Redis connect API
       const response = await secureApiRequest('/api/redis/connect', {
         method: 'POST',
@@ -70,16 +70,16 @@ export default function RedisGUI() {
       if (!result.success) {
         throw new Error(result.error || 'Connection failed')
       }
-      
+
       setConnection(config)
       setIsConnected(true)
       setActiveConnectionId(profileId || name || 'default')
-      
+
       // Update profile metadata if it's an encrypted profile
       if (profileId) {
-        await updateProfileMetadata(profileId, { 
+        await updateProfileMetadata(profileId, {
           lastConnected: new Date(),
-          isConnected: true 
+          isConnected: true
         })
       }
     } catch (error) {
@@ -92,16 +92,15 @@ export default function RedisGUI() {
     // Update profile metadata to mark as disconnected (only if profile still exists)
     if (activeConnectionId) {
       try {
-        await updateProfileMetadata(activeConnectionId, { 
-          isConnected: false 
+        await updateProfileMetadata(activeConnectionId, {
+          isConnected: false
         })
       } catch (error) {
         // Profile might not exist anymore (e.g., after clearing all data)
         // This is expected and not an error - just log it
-        console.log('Profile no longer exists, skipping metadata update')
       }
     }
-    
+
     setConnection(null)
     setIsConnected(false)
     setActiveConnectionId(null)
@@ -178,12 +177,12 @@ export default function RedisGUI() {
             {/* Header */}
             <div className="text-center space-y-2">
               <h2 className="text-3xl font-bold text-foreground">What happens in the browser stays in the browser</h2>
-            <p className="text-muted-foreground">
-              {encryptedProfilesAvailable && hasEncryptedProfiles
-                ? `You have ${encryptedProfiles.length} encrypted profile${encryptedProfiles.length > 1 ? 's' : ''} available`
-                : "Create encrypted connection profiles to get started"
-              }
-            </p>
+              <p className="text-muted-foreground">
+                {encryptedProfilesAvailable && hasEncryptedProfiles
+                  ? `You have ${encryptedProfiles.length} encrypted profile${encryptedProfiles.length > 1 ? 's' : ''} available`
+                  : "Create encrypted connection profiles to get started"
+                }
+              </p>
             </div>
 
             {/* Loading State */}
@@ -364,6 +363,14 @@ export default function RedisGUI() {
                         </div>
                       </CardContent>
                     </Card>
+                    <div className="flex-1">
+                      <EncryptedProfilesManager
+                        onConnect={connect}
+                        onSwitchConnection={switchConnection}
+                        activeConnectionId={activeConnectionId || undefined}
+                      />
+                    </div>
+
                   </div>
 
                   <SecuritySettings onDisconnect={disconnect} />

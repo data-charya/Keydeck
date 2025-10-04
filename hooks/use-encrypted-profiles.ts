@@ -224,7 +224,6 @@ export function useEncryptedProfiles() {
       // Check if this is a "profile not found" error (expected after clearing data)
       const errorMessage = error instanceof Error ? error.message : "Unknown error"
       if (errorMessage.includes('Profile not found')) {
-        console.log('Profile no longer exists, skipping metadata update')
         return // Don't show error toast for expected scenario
       }
       

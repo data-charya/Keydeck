@@ -8,6 +8,7 @@ import {
   decryptConnectionProfile, 
   isConnectionEncryptionSupported 
 } from './connection-encryption'
+import { parseRedisUri, type RedisConfig } from './redis-uri'
 
 export interface ConnectionProfile {
   id: string
@@ -410,18 +411,42 @@ export function createConnectionProfile(
   name: string, 
   id?: string
 ): ConnectionProfile {
+  let redisConfig: RedisConfig
+  
+  // Handle URI connections
+  if (config.uri) {
+    try {
+      redisConfig = parseRedisUri(config.uri)
+    } catch (error) {
+      throw new Error(`Invalid URI format: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  } else {
+    // Handle form connections
+    redisConfig = {
+      host: config.host,
+      port: config.port,
+      username: config.username,
+      password: config.password,
+      database: config.database || 0,
+      tls: config.tls || false,
+      connectTimeout: config.connectTimeout,
+      commandTimeout: config.commandTimeout,
+      maxRetriesPerRequest: config.maxRetriesPerRequest,
+    }
+  }
+  
   return {
     id: id || generateProfileId(),
     name,
-    host: config.host,
-    port: config.port,
-    username: config.username,
-    password: config.password,
-    database: config.database || 0,
-    tls: config.tls || false,
-    connectTimeout: config.connectTimeout,
-    commandTimeout: config.commandTimeout,
-    maxRetriesPerRequest: config.maxRetriesPerRequest,
+    host: redisConfig.host,
+    port: redisConfig.port,
+    username: redisConfig.username,
+    password: redisConfig.password,
+    database: redisConfig.database || 0,
+    tls: redisConfig.tls || false,
+    connectTimeout: redisConfig.connectTimeout,
+    commandTimeout: redisConfig.commandTimeout,
+    maxRetriesPerRequest: redisConfig.maxRetriesPerRequest,
     createdAt: new Date(),
     updatedAt: new Date(),
     isConnected: false,
