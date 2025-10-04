@@ -14,6 +14,7 @@ import { RedisConsole } from "@/components/redis-console"
 import { DashboardOverview } from "@/components/dashboard-overview"
 import { PerformanceCharts } from "@/components/performance-charts"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { ThemeSelector } from "@/components/theme-selector"
 import { EncryptedProfilesManager } from "@/components/encrypted-profiles-manager"
 import { useEncryptedProfiles } from "@/hooks/use-encrypted-profiles"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -144,7 +145,10 @@ export default function RedisGUI() {
                   </Badge>
                 </div>
               )}
-              <ThemeToggle />
+              <div className="flex items-center gap-2">
+                <ThemeSelector />
+                <ThemeToggle />
+              </div>
             </div>
           </div>
         </div>
