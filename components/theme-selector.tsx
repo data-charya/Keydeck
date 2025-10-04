@@ -99,7 +99,7 @@ export function ThemeSelector() {
 
   if (!mounted) {
     return (
-      <Button variant="outline" size="icon">
+      <Button variant="outline" className="hover:cursor-pointer" size="icon">
         <Palette className="h-[1.2rem] w-[1.2rem]" />
         <span className="sr-only">Select theme</span>
       </Button>
@@ -111,7 +111,7 @@ export function ThemeSelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" title="Select color theme">
+        <Button variant="outline" size="icon" className="hover:cursor-pointer" title="Select color theme">
           <Palette className="h-[1.2rem] w-[1.2rem]" />
           <span className="sr-only">Select theme</span>
         </Button>

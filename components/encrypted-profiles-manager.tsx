@@ -278,9 +278,9 @@ export function EncryptedProfilesManager({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="space-y-2">
               <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
+                <Shield className="w-5 h-5 text-primary" />
                 Encrypted Connection Profiles
                 {isUnlocked && <CheckCircle className="w-4 h-4 text-green-500" />}
               </CardTitle>
