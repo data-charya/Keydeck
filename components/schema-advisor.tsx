@@ -500,6 +500,64 @@ export function SchemaAdvisor({ className }: SchemaAdvisorProps) {
         </Tabs>
       )}
 
+      {loading && (
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary/5">
+          <CardContent className="flex flex-col items-center justify-center py-16 space-y-6">
+            <div className="relative">
+              {/* Outer rotating ring */}
+              <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-spin" style={{ width: '120px', height: '120px' }} />
+              
+              {/* Middle pulsing ring */}
+              <div className="absolute inset-0 rounded-full border-4 border-primary/30 animate-pulse" style={{ width: '120px', height: '120px', animationDuration: '2s' }} />
+              
+              {/* Inner icon container */}
+              <div className="flex items-center justify-center" style={{ width: '120px', height: '120px' }}>
+                <div className="relative">
+                  <Database className="h-12 w-12 text-primary animate-pulse" />
+                  <div className="absolute -top-2 -right-2">
+                    <Zap className="h-6 w-6 text-yellow-500 animate-bounce" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="text-xl font-bold flex items-center justify-center gap-2">
+                <span className="inline-flex gap-1">
+                  <span className="animate-pulse">Analyzing</span>
+                  <span className="animate-pulse" style={{ animationDelay: '0.2s' }}>Redis</span>
+                  <span className="animate-pulse" style={{ animationDelay: '0.4s' }}>Schema</span>
+                </span>
+              </h3>
+              
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <span className="text-sm">This may take a moment</span>
+                <span className="inline-flex gap-1">
+                  <span className="animate-bounce" style={{ animationDelay: '0s' }}>.</span>
+                  <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>.</span>
+                  <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>.</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 w-full max-w-md mt-4">
+              <div className="flex flex-col items-center p-3 rounded-lg bg-background/50 border border-primary/10">
+                <Key className="h-5 w-5 text-primary mb-2 animate-pulse" style={{ animationDelay: '0s' }} />
+                <span className="text-xs text-muted-foreground">Scanning Keys</span>
+              </div>
+              <div className="flex flex-col items-center p-3 rounded-lg bg-background/50 border border-primary/10">
+                <BarChart3 className="h-5 w-5 text-primary mb-2 animate-pulse" style={{ animationDelay: '0.3s' }} />
+                <span className="text-xs text-muted-foreground">Analyzing Patterns</span>
+              </div>
+              <div className="flex flex-col items-center p-3 rounded-lg bg-background/50 border border-primary/10">
+                <Lightbulb className="h-5 w-5 text-primary mb-2 animate-pulse" style={{ animationDelay: '0.6s' }} />
+                <span className="text-xs text-muted-foreground">Generating Insights</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {!analysis && !loading && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
