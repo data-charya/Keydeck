@@ -15,7 +15,12 @@ interface EncryptedProfilesState {
   isAvailable: boolean
   hasPassphrase: boolean
   currentPassphrase: string | null
+  unlockExpiresAt: number | null
 }
+
+const UNLOCK_DURATION_MS = 10 * 60 * 1000 // 10 minutes
+const UNLOCK_STORAGE_KEY = 'encrypted_profiles_unlock_expires'
+const PASSPHRASE_STORAGE_KEY = 'encrypted_profiles_passphrase'
 
 export function useEncryptedProfiles() {
   const [state, setState] = useState<EncryptedProfilesState>({
@@ -24,6 +29,7 @@ export function useEncryptedProfiles() {
     isAvailable: false,
     hasPassphrase: false,
     currentPassphrase: null,
+    unlockExpiresAt: null,
   })
   
   const { toast } = useToast()
@@ -38,7 +44,31 @@ export function useEncryptedProfiles() {
           new Promise(resolve => setTimeout(resolve, 500)) // Minimum 300ms loading
         ])
         
-        setState(prev => ({ ...prev, isAvailable, isLoading: false }))
+        // Check if there's a valid unlock session
+        const storedExpiry = sessionStorage.getItem(UNLOCK_STORAGE_KEY)
+        const storedPassphrase = sessionStorage.getItem(PASSPHRASE_STORAGE_KEY)
+        
+        if (storedExpiry && storedPassphrase) {
+          const expiryTime = parseInt(storedExpiry, 10)
+          if (expiryTime > Date.now()) {
+            // Session is still valid, restore unlock state
+            setState(prev => ({ 
+              ...prev, 
+              isAvailable, 
+              isLoading: false,
+              unlockExpiresAt: expiryTime,
+              currentPassphrase: storedPassphrase,
+              hasPassphrase: true
+            }))
+          } else {
+            // Session expired, clear it
+            sessionStorage.removeItem(UNLOCK_STORAGE_KEY)
+            sessionStorage.removeItem(PASSPHRASE_STORAGE_KEY)
+            setState(prev => ({ ...prev, isAvailable, isLoading: false }))
+          }
+        } else {
+          setState(prev => ({ ...prev, isAvailable, isLoading: false }))
+        }
         
         if (isAvailable) {
           // Try to load profiles without passphrase first (to see if any exist)
@@ -97,17 +127,23 @@ export function useEncryptedProfiles() {
         }
       }
       
+      // Calculate expiry time and store it
+      const expiresAt = Date.now() + UNLOCK_DURATION_MS
+      sessionStorage.setItem(UNLOCK_STORAGE_KEY, expiresAt.toString())
+      sessionStorage.setItem(PASSPHRASE_STORAGE_KEY, passphrase)
+      
       // Only set the passphrase after successful validation
       setState(prev => ({ 
         ...prev, 
         isLoading: false,
         currentPassphrase: passphrase,
-        hasPassphrase: true
+        hasPassphrase: true,
+        unlockExpiresAt: expiresAt
       }))
       
       toast({
         title: "Passphrase accepted",
-        description: "Successfully unlocked your connection profiles",
+        description: "Successfully unlocked your connection profiles for 10 minutes",
       })
     } catch (error) {
       setState(prev => ({ 
@@ -265,11 +301,17 @@ export function useEncryptedProfiles() {
         await connectionProfilesStorage.saveProfile(profile, newPassphrase)
       }
       
+      // Calculate new expiry time and store it
+      const expiresAt = Date.now() + UNLOCK_DURATION_MS
+      sessionStorage.setItem(UNLOCK_STORAGE_KEY, expiresAt.toString())
+      sessionStorage.setItem(PASSPHRASE_STORAGE_KEY, newPassphrase)
+      
       // Update state
       setState(prev => ({ 
         ...prev, 
         isLoading: false,
-        currentPassphrase: newPassphrase
+        currentPassphrase: newPassphrase,
+        unlockExpiresAt: expiresAt
       }))
       
       // Reload profiles list
@@ -294,12 +336,17 @@ export function useEncryptedProfiles() {
       setState(prev => ({ ...prev, isLoading: true }))
       await connectionProfilesStorage.clearAllProfiles()
       
+      // Clear session storage
+      sessionStorage.removeItem(UNLOCK_STORAGE_KEY)
+      sessionStorage.removeItem(PASSPHRASE_STORAGE_KEY)
+      
       setState(prev => ({ 
         ...prev, 
         isLoading: false,
         profiles: [],
         hasPassphrase: false,
-        currentPassphrase: null
+        currentPassphrase: null,
+        unlockExpiresAt: null
       }))
       
       toast({
@@ -337,12 +384,25 @@ export function useEncryptedProfiles() {
    * Clear passphrase from memory
    */
   const clearPassphrase = useCallback(() => {
+    // Clear session storage
+    sessionStorage.removeItem(UNLOCK_STORAGE_KEY)
+    sessionStorage.removeItem(PASSPHRASE_STORAGE_KEY)
+    
     setState(prev => ({ 
       ...prev, 
       currentPassphrase: null,
-      hasPassphrase: false
+      hasPassphrase: false,
+      unlockExpiresAt: null
     }))
   }, [])
+  
+  /**
+   * Get remaining unlock time in milliseconds
+   */
+  const getRemainingUnlockTime = useCallback(() => {
+    if (!state.unlockExpiresAt) return 0
+    return Math.max(0, state.unlockExpiresAt - Date.now())
+  }, [state.unlockExpiresAt])
 
   return {
     // State
@@ -351,6 +411,7 @@ export function useEncryptedProfiles() {
     isAvailable: state.isAvailable,
     hasPassphrase: state.hasPassphrase,
     isUnlocked: !!state.currentPassphrase,
+    unlockExpiresAt: state.unlockExpiresAt,
     
     // Actions
     setPassphrase,
@@ -363,5 +424,6 @@ export function useEncryptedProfiles() {
     clearPassphrase,
     getStorageStats,
     loadProfilesList,
+    getRemainingUnlockTime,
   }
 }

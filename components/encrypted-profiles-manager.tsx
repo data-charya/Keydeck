@@ -75,6 +75,7 @@ export function EncryptedProfilesManager({
     isAvailable,
     hasPassphrase,
     isUnlocked,
+    unlockExpiresAt,
     setPassphrase,
     saveProfile,
     loadProfile,
@@ -85,7 +86,10 @@ export function EncryptedProfilesManager({
     clearPassphrase,
     getStorageStats,
     loadProfilesList,
+    getRemainingUnlockTime,
   } = useEncryptedProfiles()
+  
+  const [remainingTime, setRemainingTime] = useState<number>(0)
   
   const {
     isConnecting,
@@ -103,6 +107,34 @@ export function EncryptedProfilesManager({
       loadProfilesList()
     }
   }, [activeConnectionId, isUnlocked, loadProfilesList])
+  
+  // Timer countdown and auto-lock effect
+  useEffect(() => {
+    if (!isUnlocked || !unlockExpiresAt) {
+      setRemainingTime(0)
+      return
+    }
+    
+    // Update remaining time immediately
+    const updateTime = () => {
+      const remaining = getRemainingUnlockTime()
+      setRemainingTime(remaining)
+      
+      // Auto-lock when time expires
+      if (remaining <= 0 && isUnlocked) {
+        clearPassphrase()
+        toast({
+          title: "Profiles locked",
+          description: "Your connection profiles have been automatically locked after 10 minutes",
+        })
+      }
+    }
+    
+    updateTime()
+    const interval = setInterval(updateTime, 1000)
+    
+    return () => clearInterval(interval)
+  }, [isUnlocked, unlockExpiresAt, getRemainingUnlockTime, clearPassphrase, toast])
 
   // No need to reset dismissal flag since we don't auto-popup anymore
 
@@ -247,6 +279,17 @@ export function EncryptedProfilesManager({
     if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`
     return "Just now"
   }
+  
+  const formatRemainingTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    
+    if (minutes > 0) {
+      return `${minutes} min${minutes > 1 ? 's' : ''} ${seconds}s`
+    }
+    return `${seconds}s`
+  }
 
   if (!isAvailable) {
     return (
@@ -286,7 +329,22 @@ export function EncryptedProfilesManager({
               </CardTitle>
               <CardDescription>
                 {isUnlocked 
-                  ? "Your connection profiles are unlocked and ready to use"
+                  ? (
+                    <div className="flex items-center gap-2">
+                      <span>Your connection profiles are unlocked and ready to use</span>
+                      {remainingTime > 0 && (
+                        <Badge 
+                          variant="secondary" 
+                          className={`flex items-center gap-1 ${
+                            remainingTime < 60000 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' : ''
+                          }`}
+                        >
+                          <Clock className="w-3 h-3" />
+                          Auto-lock in {formatRemainingTime(remainingTime)}
+                        </Badge>
+                      )}
+                    </div>
+                  )
                   : "Enter your passphrase to unlock your encrypted connection profiles"
                 }
               </CardDescription>
