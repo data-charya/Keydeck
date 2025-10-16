@@ -139,7 +139,6 @@ export default function RedisGUI() {
                   height={100}
                   className="hidden dark:block"
                 />
-                <p className="text-sm text-muted-foreground">Cache command simplified</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
