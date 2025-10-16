@@ -13,14 +13,14 @@ export default function NotFound() {
         <div className="text-center mb-8">
           <Image
             src="/logo-dark.svg"
-            alt="Redash"
+            alt="KeyDeck"
             width={120}
             height={80}
             className="dark:hidden mx-auto mb-4"
           />
           <Image
             src="/logo-white.svg"
-            alt="Redash"
+            alt="KeyDeck"
             width={120}
             height={80}
             className="hidden dark:block mx-auto mb-4"

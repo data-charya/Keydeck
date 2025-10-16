@@ -127,19 +127,19 @@ export default function RedisGUI() {
               <div>
                 <Image
                   src="/logo-dark.svg"
-                  alt="Redash"
+                  alt="KeyDeck"
                   width={150}
                   height={100}
                   className="dark:hidden"
                 />
                 <Image
                   src="/logo-white.svg"
-                  alt="Redash"
+                  alt="KeyDeck"
                   width={150}
                   height={100}
                   className="hidden dark:block"
                 />
-                <p className="text-sm text-muted-foreground">Redis management for dummies</p>
+                <p className="text-sm text-muted-foreground">Cache command simplified</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -191,7 +191,7 @@ export default function RedisGUI() {
                 <div className="text-center space-y-4">
                   <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
                   <div className="space-y-2">
-                    <p className="text-lg font-medium">Loading Redash...</p>
+                    <p className="text-lg font-medium">Loading KeyDeck...</p>
                     <p className="text-sm text-muted-foreground">Setting up secure connection options</p>
                   </div>
                 </div>

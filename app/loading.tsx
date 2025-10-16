@@ -12,19 +12,19 @@ export default function Loading() {
               <div>
                 <Image
                   src="/logo-dark.svg"
-                  alt="Redash"
+                  alt="KeyDeck"
                   width={150}
                   height={100}
                   className="dark:hidden"
                 />
                 <Image
                   src="/logo-white.svg"
-                  alt="Redash"
+                  alt="KeyDeck"
                   width={150}
                   height={100}
                   className="hidden dark:block"
                 />
-                <p className="text-sm text-muted-foreground">Redis management for dummies</p>
+                <p className="text-sm text-muted-foreground">Cache command simplified</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

@@ -99,7 +99,7 @@ export function isOriginAllowed(): boolean {
     'http://127.0.0.1:3000',
     'https://localhost:3000',
     'https://127.0.0.1:3000',
-    'https://redash-peach.vercel.app'
+    'https://keydeck-peach.vercel.app'
     // Add your production domain here
     // 'https://yourdomain.com',
   ]

@@ -1,10 +1,10 @@
 <div align="center">
 
-![Redash Logo](public/logo-dark.svg#gh-light-mode-only)
-![Redash Logo](public/logo-white.svg#gh-dark-mode-only)
+![KeyDeck Logo](public/logo-dark.svg#gh-light-mode-only)
+![KeyDeck Logo](public/logo-white.svg#gh-dark-mode-only)
 
-# Redash
-### Redis management for dummies
+# KeyDeck
+### Cache command simplified
 
 A modern, web-based Redis management interface built with Next.js and TypeScript. Connect, browse, and manage your Redis instances with ease.
 

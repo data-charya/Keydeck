@@ -56,8 +56,8 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
           <div className="w-full max-w-2xl">
             <div className="text-center mb-8">
-              <div className="text-2xl font-bold text-foreground mb-2">Redash</div>
-              <p className="text-muted-foreground">Redis management for dummies</p>
+              <div className="text-2xl font-bold text-foreground mb-2">KeyDeck</div>
+              <p className="text-muted-foreground">Cache command simplified</p>
             </div>
 
             <Card className="border-destructive/20">

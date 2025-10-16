@@ -25,8 +25,8 @@ export const SECURITY_CONFIG = {
     
     // Add common Vercel patterns
     const vercelPatterns = [
-      'https://redash-peach.vercel.app',
-      'https://redash-peach.vercel.app/',
+      'https://keydeck-peach.vercel.app',
+      'https://keydeck-peach.vercel.app/',
     ]
     
     const appUrlOrigins = process.env.NEXT_PUBLIC_APP_URL ? 

@@ -14,12 +14,12 @@ services:
       timeout: 10s
       retries: 3
 
-  redash:
+  keydeck:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: redash
-    image: redash:latest
+    container_name: keydeck
+    image: keydeck:latest
     ports:
       - "3000:3000"
     environment:

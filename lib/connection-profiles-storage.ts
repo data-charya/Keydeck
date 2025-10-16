@@ -38,7 +38,7 @@ interface StoredProfile {
   isConnected?: boolean
 }
 
-const DB_NAME = 'RedashConnectionProfiles'
+const DB_NAME = 'KeyDeckConnectionProfiles'
 const DB_VERSION = 1
 const STORE_NAME = 'profiles'
 
