@@ -61,12 +61,12 @@ export default function RedisGUI() {
         body: JSON.stringify(config),
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to connect to Redis')
+        throw new Error(result.error || 'Failed to connect to Redis')
       }
 
-      const result = await response.json()
       if (!result.success) {
         throw new Error(result.error || 'Connection failed')
       }
