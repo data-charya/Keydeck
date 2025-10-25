@@ -3,7 +3,6 @@
 ![KeyDeck Logo](public/logo-dark.svg#gh-light-mode-only)
 ![KeyDeck Logo](public/logo-white.svg#gh-dark-mode-only)
 
-# KeyDeck
 ### Cache command simplified
 
 A modern, web-based Redis management interface built with Next.js and TypeScript. Connect, browse, and manage your Redis instances with ease.
