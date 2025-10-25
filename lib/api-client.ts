@@ -65,12 +65,18 @@ export async function secureApiRequest(
     
     // If we get a 403 with CSRF error, refresh token and retry
     if (response.status === 403 && retryCount < maxRetries) {
-      const errorData = await response.json().catch(() => ({}))
-      if (errorData.error === 'Invalid CSRF token') {
-        csrfToken = null // Clear the invalid token
-        await fetchCSRFToken() // Get a fresh token
-        retryCount++
-        continue // Retry the request
+      // Clone the response so we can read it without consuming the original
+      const clonedResponse = response.clone()
+      try {
+        const errorData = await clonedResponse.json()
+        if (errorData.error === 'Invalid CSRF token') {
+          csrfToken = null // Clear the invalid token
+          await fetchCSRFToken() // Get a fresh token
+          retryCount++
+          continue // Retry the request
+        }
+      } catch (jsonError) {
+        // If we can't parse JSON, just return the original response
       }
     }
     
