@@ -613,7 +613,7 @@ Redis client
 - [ ] Command scheduling/automation
 - [ ] Backup and restore functionality
 
-Have a feature request? [Open an issue](https://github.com/your-repo/issues) or start a [discussion](https://github.com/your-repo/discussions)!
+Have a feature request? [Open an issue](https://github.com/data-charya/Keydeck/issues) or start a [discussion](https://github.com/data-charya/Keydeck/discussions)!
 
 ---
 
@@ -798,8 +798,8 @@ Yes! You can self-host KeyDeck on your own infrastructure. See the [Deployment](
 Need help? Here's where to find it:
 
 - **📚 Documentation**: This README, [PRODUCTION_SETUP.md](PRODUCTION_SETUP.md), and [README_ENCRYPTED_PROFILES.md](README_ENCRYPTED_PROFILES.md)
-- **🐛 Bug Reports**: [GitHub Issues](https://github.com/your-repo/issues)
-- **💡 Feature Requests**: [GitHub Discussions](https://github.com/your-repo/discussions)
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/data-charya/Keydeck/issues)
+- **💡 Feature Requests**: [GitHub Discussions](https://github.com/data-charya/Keydeck/discussions)
 - **💬 Questions**: Open a GitHub issue with the `question` label
 
 ### Reporting Issues
@@ -835,13 +835,13 @@ And to all our contributors and users who make this project better every day! �
 
 ### 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=your-repo/keydeck&type=Date)](https://star-history.com/#your-repo/keydeck&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=data-charya/Keydeck&type=Date)](https://star-history.com/data-charya/Keydeck&Date)
 
 ---
 
 **Made with ❤️ for the Redis community**
 
-[⭐ Star this repo](https://github.com/your-repo) • [🐛 Report Bug](https://github.com/your-repo/issues) • [💡 Request Feature](https://github.com/your-repo/issues) • [📖 Documentation](https://github.com/your-repo/wiki)
+[⭐ Star this repo](https://github.com/data-charya/Keydeck) • [🐛 Report Bug](https://github.com/data-charya/Keydeck/issues) • [💡 Request Feature](https://github.com/data-charya/Keydeck/issues) • [📖 Documentation](https://github.com/data-charya/Keydeck/wiki)
 
 ---
 
@@ -851,12 +851,12 @@ If KeyDeck helps you manage Redis better, consider:
 - ⭐ Starring the repository
 - 🐦 Sharing on social media
 - 🤝 Contributing to the project
-- ☕ [Buy me a coffee](https://buymeacoffee.com/your-username)
+- ☕ [Buy me a coffee](https://buymeacoffee.com/shanwill)
 
 ---
 
 **KeyDeck** - Cache command simplified
 
-Copyright © 2024 - Present
+Copyright © 2025 - Present
 
 </div>
