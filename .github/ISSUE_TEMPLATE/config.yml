@@ -1,0 +1,15 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📖 Documentation
+    url: https://github.com/data-charya/Keydeck/blob/main/README.md
+    about: Check out the comprehensive documentation
+  - name: 🔧 Production Setup Guide
+    url: https://github.com/data-charya/Keydeck/blob/main/PRODUCTION_SETUP.md
+    about: Help with production deployment and configuration
+  - name: 🔐 Encrypted Profiles Guide
+    url: https://github.com/data-charya/Keydeck/blob/main/README_ENCRYPTED_PROFILES.md
+    about: Learn about encrypted connection profiles
+  - name: 💬 Discussions
+    url: https://github.com/data-charya/Keydeck/discussions
+    about: Ask questions and discuss ideas with the community
+
