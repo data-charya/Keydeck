@@ -86,6 +86,15 @@ const themes = [
       light: 'bg-gradient-to-br from-violet-200 to-indigo-300',
       dark: 'bg-gradient-to-br from-violet-800 to-indigo-900'
     }
+  },
+  {
+    name: 'KeyDeck',
+    value: 'keydeck',
+    description: 'Signature turquoise',
+    colors: {
+      light: 'bg-gradient-to-br from-teal-200 to-cyan-300',
+      dark: 'bg-gradient-to-br from-teal-700 to-cyan-800'
+    }
   }
 ]
 
