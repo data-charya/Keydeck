@@ -835,7 +835,7 @@ And to all our contributors and users who make this project better every day! â
 
 ### ğŸŒŸ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=data-charya/Keydeck&type=Date)](https://star-history.com/data-charya/Keydeck&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=data-charya/Keydeck&type=Date)](https://star-history.com/#data-charya/Keydeck&Date)
 
 ---
 
