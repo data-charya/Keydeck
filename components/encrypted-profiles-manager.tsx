@@ -60,6 +60,7 @@ export function EncryptedProfilesManager({
 }: EncryptedProfilesManagerProps) {
   const [showPassphraseDialog, setShowPassphraseDialog] = useState(false)
   const [showCreateProfileDialog, setShowCreateProfileDialog] = useState(false)
+  const [showEditProfileDialog, setShowEditProfileDialog] = useState(false)
   const [showChangePassphraseDialog, setShowChangePassphraseDialog] = useState(false)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [editingProfile, setEditingProfile] = useState<any>(null)
@@ -234,6 +235,45 @@ export function EncryptedProfilesManager({
     } catch (error) {
       toast({
         title: "Failed to connect",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleEditProfile = async (profileId: string) => {
+    try {
+      const profile = await loadProfile(profileId)
+      if (profile) {
+        setEditingProfile(profile)
+        setShowEditProfileDialog(true)
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to load profile",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleUpdateProfile = async (config: RedisConfig, name?: string) => {
+    try {
+      if (!editingProfile) return
+
+      const profileName = name || editingProfile.name
+      // Save with the same ID to update
+      await saveProfile(config, profileName, '', editingProfile.id)
+      setShowEditProfileDialog(false)
+      setEditingProfile(null)
+      
+      toast({
+        title: "Profile updated",
+        description: `Connection profile "${profileName}" has been updated`,
+      })
+    } catch (error) {
+      toast({
+        title: "Failed to update profile",
         description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       })
@@ -561,7 +601,8 @@ export function EncryptedProfilesManager({
                                     ? "bg-orange-100 hover:bg-orange-200 text-orange-700 dark:bg-orange-900 dark:hover:bg-orange-800 dark:text-orange-300"
                                     : "hover:bg-muted"
                               }`}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 if (isUnlocked) {
                                   handleConnectToProfile(profile.id)
                                 } else {
@@ -578,6 +619,42 @@ export function EncryptedProfilesManager({
                               )}
                             </Button>
                           </div>
+
+                          {isUnlocked && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0 hover:bg-muted"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleEditProfile(profile.id)
+                                  }}
+                                  className="hover:cursor-pointer"
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteProfile(profile.id, profile.name)
+                                  }}
+                                  className="text-red-600 dark:text-red-400 hover:cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete Profile
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                       </div>
                           </div>
@@ -636,6 +713,31 @@ export function EncryptedProfilesManager({
             <ConnectionConfig 
               onConnect={handleCreateProfile}
             />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditProfileDialog} onOpenChange={(open) => {
+        setShowEditProfileDialog(open)
+        if (!open) setEditingProfile(null)
+      }}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Connection Profile</DialogTitle>
+            <DialogDescription>
+              Update your encrypted connection profile. Your credentials will remain encrypted locally with AES-256-GCM encryption.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            {editingProfile && (
+              <ConnectionConfig 
+                onConnect={handleUpdateProfile}
+                initialConfig={editingProfile}
+                initialName={editingProfile.name}
+                submitButtonText="Update Profile"
+              />
+            )}
           </div>
         </DialogContent>
       </Dialog>

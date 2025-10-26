@@ -116,19 +116,35 @@ export function generateConnectionName(config: RedisConfig, osInfo?: string): st
     return 'Aiven Redis'
   }
   
-  if (host.includes('redis-labs') || host.includes('redislabs')) {
+  if (host.includes('redis-labs') || host.includes('redislabs') || host.includes('rediscloud')) {
     return 'Redis Cloud'
   }
   
-  if (host.includes('aws') || host.includes('amazonaws')) {
+  if (host.includes('upstash')) {
+    return 'Upstash Redis'
+  }
+  
+  if (host.includes('railway')) {
+    return 'Railway Redis'
+  }
+  
+  if (host.includes('render')) {
+    return 'Render Redis'
+  }
+  
+  if (host.includes('fly.io') || host.includes('flycast')) {
+    return 'Fly.io Redis'
+  }
+  
+  if (host.includes('aws') || host.includes('amazonaws') || host.includes('elasticache')) {
     return 'AWS ElastiCache'
   }
   
-  if (host.includes('azure')) {
+  if (host.includes('azure') || host.includes('windows.net')) {
     return 'Azure Cache'
   }
   
-  if (host.includes('gcp') || host.includes('google')) {
+  if (host.includes('gcp') || host.includes('google') || host.includes('memorystore')) {
     return 'Google Cloud Memorystore'
   }
   
@@ -138,6 +154,34 @@ export function generateConnectionName(config: RedisConfig, osInfo?: string): st
   
   if (host.includes('heroku')) {
     return 'Heroku Redis'
+  }
+  
+  if (host.includes('scaleway')) {
+    return 'Scaleway Redis'
+  }
+  
+  if (host.includes('vultr')) {
+    return 'Vultr Redis'
+  }
+  
+  if (host.includes('linode')) {
+    return 'Linode Redis'
+  }
+  
+  if (host.includes('ibm') || host.includes('bluemix')) {
+    return 'IBM Cloud Redis'
+  }
+  
+  if (host.includes('ovh')) {
+    return 'OVH Redis'
+  }
+  
+  if (host.includes('cloudflare')) {
+    return 'Cloudflare Redis'
+  }
+  
+  if (host.includes('vercel')) {
+    return 'Vercel Redis'
   }
   
   // Handle localhost/development

@@ -15,10 +15,18 @@ import { buildRedisUri, generateConnectionName, type RedisConfig } from "@/lib/r
 
 interface ConnectionConfigProps {
   onConnect: (config: RedisConfig, connectionName?: string) => Promise<void>
+  initialConfig?: RedisConfig
+  initialName?: string
+  submitButtonText?: string
 }
 
-export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
-  const [config, setConfig] = useState<RedisConfig>({
+export function ConnectionConfig({ 
+  onConnect, 
+  initialConfig,
+  initialName = "",
+  submitButtonText = "Connect to Redis"
+}: ConnectionConfigProps) {
+  const [config, setConfig] = useState<RedisConfig>(initialConfig || {
     host: "localhost",
     port: 6379,
     username: "",
@@ -29,13 +37,32 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
     commandTimeout: 5000,
     maxRetriesPerRequest: 5,
   })
-  const [connectionName, setConnectionName] = useState("")
+  const [connectionName, setConnectionName] = useState(initialName)
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [detailedError, setDetailedError] = useState<any>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [connectionUri, setConnectionUri] = useState("")
-  const [connectionMethod, setConnectionMethod] = useState<"form" | "uri">("form")
+  const [connectionUri, setConnectionUri] = useState(() => {
+    // Initialize URI if editing and config has URI or build from config
+    if (initialConfig) {
+      if ('uri' in initialConfig && initialConfig.uri) {
+        return initialConfig.uri as string
+      }
+      try {
+        return buildRedisUri(initialConfig)
+      } catch {
+        return ""
+      }
+    }
+    return ""
+  })
+  const [connectionMethod, setConnectionMethod] = useState<"form" | "uri">(() => {
+    // If initialConfig has URI, default to URI method
+    if (initialConfig && 'uri' in initialConfig && initialConfig.uri) {
+      return "uri"
+    }
+    return "form"
+  })
 
   const handleConnect = async () => {
     setIsConnecting(true)
@@ -488,12 +515,12 @@ export function ConnectionConfig({ onConnect }: ConnectionConfigProps) {
             {isConnecting ? (
               <>
                 <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                Connecting to Redis...
+                {submitButtonText === "Update Profile" ? "Updating..." : "Connecting to Redis..."}
               </>
             ) : (
               <>
                 <Database className="w-5 h-5 mr-3" />
-                Connect to Redis
+                {submitButtonText}
               </>
             )}
           </Button>
