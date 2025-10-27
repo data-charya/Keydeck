@@ -841,7 +841,7 @@ And to all our contributors and users who make this project better every day! �
 
 **Made with ❤️ for the Redis community**
 
-[⭐ Star this repo](https://github.com/data-charya/Keydeck) • [🐛 Report Bug](https://github.com/data-charya/Keydeck/issues) • [💡 Request Feature](https://github.com/data-charya/Keydeck/issues) • [📖 Documentation](https://github.com/data-charya/Keydeck/wiki)
+[⭐ Star this repo](https://github.com/data-charya/Keydeck) • [🐛 Report Bug](https://github.com/data-charya/Keydeck/issues) • [💡 Request Feature](https://github.com/data-charya/Keydeck/issues) • [📖 Documentation](https://keydeck.dev/docs)
 
 ---
 
