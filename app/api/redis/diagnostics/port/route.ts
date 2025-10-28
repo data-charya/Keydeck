@@ -7,11 +7,17 @@ async function portHandler(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const host = searchParams.get('host') || 'localhost'
     const port = parseInt(searchParams.get('port') || '6379')
+    const tls = searchParams.get('tls') === 'true'
+    const username = searchParams.get('username') || undefined
+    const password = searchParams.get('password') || undefined
 
     // Test if the port is accessible and responding to Redis protocol
     const client = createRedisClient({ 
       host, 
-      port
+      port,
+      tls,
+      username,
+      password
     })
     
     try {

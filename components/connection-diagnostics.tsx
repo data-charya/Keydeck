@@ -30,38 +30,44 @@ interface ConnectionDiagnosticsProps {
   port?: number
   username?: string
   password?: string
+  tls?: boolean
   onClose?: () => void
   allowManualInput?: boolean
 }
 
-export function ConnectionDiagnostics({ host, port, username, password, onClose, allowManualInput = false }: ConnectionDiagnosticsProps) {
+export function ConnectionDiagnostics({ host, port, username, password, tls, onClose, allowManualInput = false }: ConnectionDiagnosticsProps) {
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [manualConfig, setManualConfig] = useState({
-    host: host || "localhost",
+    host: host || "",
     port: port || 6379,
     username: username || "",
-    password: password || ""
+    password: password || "",
+    tls: tls || false
   })
 
   // Update manual config when props change
   React.useEffect(() => {
-    if (host !== undefined || port !== undefined || username !== undefined || password !== undefined) {
+    if (host !== undefined || port !== undefined || username !== undefined || password !== undefined || tls !== undefined) {
       setManualConfig({
-        host: host || "localhost",
+        host: host || "",
         port: port || 6379,
         username: username || "",
-        password: password || ""
+        password: password || "",
+        tls: tls || false
       })
     }
-  }, [host, port, username, password])
+  }, [host, port, username, password, tls])
 
   const currentConfig = {
     host: host || manualConfig.host,
     port: port || manualConfig.port,
     username: username || manualConfig.username,
-    password: password || manualConfig.password
+    password: password || manualConfig.password,
+    tls: tls !== undefined ? tls : manualConfig.tls
   }
+  
+  const hasValidConfig = currentConfig.host && currentConfig.port
 
   const runDiagnostics = async () => {
     setIsRunning(true)
@@ -94,7 +100,8 @@ export function ConnectionDiagnostics({ host, port, username, password, onClose,
 
     // Test 1: Network Connectivity (Basic TCP connection test)
     try {
-      const response = await secureApiRequest(`/api/redis/diagnostics/network?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
+      const networkUrl = `/api/redis/diagnostics/network?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}&tls=${currentConfig.tls}${currentConfig.username ? `&username=${encodeURIComponent(currentConfig.username)}` : ''}${currentConfig.password ? `&password=${encodeURIComponent(currentConfig.password)}` : ''}`
+      const response = await secureApiRequest(networkUrl)
       const result = await response.json()
       
       tests[0] = {
@@ -118,7 +125,8 @@ export function ConnectionDiagnostics({ host, port, username, password, onClose,
 
     // Test 2: Port Availability (Redis-specific connection test)
     try {
-      const response = await secureApiRequest(`/api/redis/diagnostics/port?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
+      const portUrl = `/api/redis/diagnostics/port?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}&tls=${currentConfig.tls}${currentConfig.username ? `&username=${encodeURIComponent(currentConfig.username)}` : ''}${currentConfig.password ? `&password=${encodeURIComponent(currentConfig.password)}` : ''}`
+      const response = await secureApiRequest(portUrl)
       const result = await response.json()
       
       tests[1] = {
@@ -142,7 +150,8 @@ export function ConnectionDiagnostics({ host, port, username, password, onClose,
 
     // Test 3: Redis Server Response (PING test)
     try {
-      const response = await secureApiRequest(`/api/redis/diagnostics/ping?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}`)
+      const pingUrl = `/api/redis/diagnostics/ping?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}&tls=${currentConfig.tls}${currentConfig.username ? `&username=${encodeURIComponent(currentConfig.username)}` : ''}${currentConfig.password ? `&password=${encodeURIComponent(currentConfig.password)}` : ''}`
+      const response = await secureApiRequest(pingUrl)
       const result = await response.json()
       
       tests[2] = {
@@ -166,7 +175,7 @@ export function ConnectionDiagnostics({ host, port, username, password, onClose,
 
     // Test 4: Authentication (if password is provided)
     try {
-      const authUrl = `/api/redis/diagnostics/auth?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}${currentConfig.username ? `&username=${encodeURIComponent(currentConfig.username)}` : ''}${currentConfig.password ? `&password=${encodeURIComponent(currentConfig.password)}` : ''}`
+      const authUrl = `/api/redis/diagnostics/auth?host=${encodeURIComponent(currentConfig.host)}&port=${currentConfig.port}&tls=${currentConfig.tls}${currentConfig.username ? `&username=${encodeURIComponent(currentConfig.username)}` : ''}${currentConfig.password ? `&password=${encodeURIComponent(currentConfig.password)}` : ''}`
       const response = await secureApiRequest(authUrl)
       const result = await response.json()
       
@@ -227,21 +236,34 @@ export function ConnectionDiagnostics({ host, port, username, password, onClose,
           Connection Diagnostics
         </CardTitle>
         <CardDescription>
-          Troubleshooting connection to {currentConfig.host}:{currentConfig.port}
+          {hasValidConfig 
+            ? `Troubleshooting connection to ${currentConfig.host}:${currentConfig.port}${currentConfig.tls ? ' (TLS Enabled)' : ''}`
+            : "Diagnostic tools for troubleshooting connection issues"
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {diagnostics.length === 0 && !isRunning && (
+        {!hasValidConfig ? (
+          <div className="text-center py-6">
+            <AlertCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-muted-foreground mb-2 text-sm font-medium">
+              No Connection Profile Selected
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Connect to a Redis server first, then diagnostics will be available here
+            </p>
+          </div>
+        ) : diagnostics.length === 0 && !isRunning ? (
           <div className="text-center py-3">
             <p className="text-muted-foreground mb-3 text-sm">
-              Test connection issues
+              Test connection issues for <strong>{currentConfig.host}:{currentConfig.port}</strong>
             </p>
             <Button onClick={runDiagnostics} className="w-full" size="sm">
               <Terminal className="w-4 h-4 mr-2" />
               Run Diagnostics
             </Button>
           </div>
-        )}
+        ) : null}
 
         {isRunning && (
           <div className="space-y-3">

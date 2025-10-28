@@ -38,6 +38,7 @@ export default function RedisGUI() {
   const [connection, setConnection] = useState<any>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null)
+  const [lastAttemptedConfig, setLastAttemptedConfig] = useState<any>(null)
 
   // Initialize API security on app startup
   useEffect(() => {
@@ -47,6 +48,9 @@ export default function RedisGUI() {
   // Connection functions for encrypted profiles only
   const connect = async (config: any, name?: string, profileId?: string) => {
     try {
+      // Track the config being attempted for diagnostics
+      setLastAttemptedConfig(config)
+      
       // First disconnect from current connection if any
       if (isConnected && activeConnectionId) {
         await disconnect()
@@ -203,23 +207,6 @@ export default function RedisGUI() {
                   onDisconnect={disconnect}
                   activeConnectionId={activeConnectionId || undefined}
                 />
-
-                {/* Diagnostics Panel */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Terminal className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Connection Diagnostics</h3>
-                  </div>
-                  <div className="text-xs text-muted-foreground mb-2">
-                    Test connection issues
-                  </div>
-                  <ConnectionDiagnostics
-                    host={connection?.host || "localhost"}
-                    port={connection?.port || 6379}
-                    username={connection?.username}
-                    password={connection?.password}
-                  />
-                </div>
               </div>
             ) : (
               /* Fallback for when encrypted profiles are not available */
@@ -375,6 +362,14 @@ export default function RedisGUI() {
                   </div>
 
                   <SecuritySettings onDisconnect={disconnect} />
+
+                  <ConnectionDiagnostics
+                    host={(connection || lastAttemptedConfig)?.host || undefined}
+                    port={(connection || lastAttemptedConfig)?.port || undefined}
+                    username={(connection || lastAttemptedConfig)?.username}
+                    password={(connection || lastAttemptedConfig)?.password}
+                    tls={(connection || lastAttemptedConfig)?.tls}
+                  />
 
                   <Card>
                     <CardHeader>

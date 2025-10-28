@@ -9,6 +9,7 @@ async function authHandler(request: NextRequest) {
     const port = parseInt(searchParams.get('port') || '6379')
     const username = searchParams.get('username') || ''
     const password = searchParams.get('password') || ''
+    const tls = searchParams.get('tls') === 'true'
 
     // Test authentication if password is provided
     if (!password) {
@@ -16,7 +17,8 @@ async function authHandler(request: NextRequest) {
       const client = createRedisClient({ 
         host, 
         port,
-        username: username || undefined
+        username: username || undefined,
+        tls
       })
       
       try {
@@ -52,7 +54,8 @@ async function authHandler(request: NextRequest) {
         host, 
         port,
         username: username || undefined,
-        password
+        password,
+        tls
       })
       
       try {
