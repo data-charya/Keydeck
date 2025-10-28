@@ -200,6 +200,7 @@ export default function RedisGUI() {
                 <EncryptedProfilesManager
                   onConnect={connect}
                   onSwitchConnection={switchConnection}
+                  onDisconnect={disconnect}
                   activeConnectionId={activeConnectionId || undefined}
                 />
 
@@ -366,6 +367,7 @@ export default function RedisGUI() {
                       <EncryptedProfilesManager
                         onConnect={connect}
                         onSwitchConnection={switchConnection}
+                        onDisconnect={disconnect}
                         activeConnectionId={activeConnectionId || undefined}
                       />
                     </div>

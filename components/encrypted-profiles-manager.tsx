@@ -50,12 +50,14 @@ import type { RedisConfig } from "@/lib/redis-uri"
 interface EncryptedProfilesManagerProps {
   onConnect: (config: RedisConfig, name?: string, profileId?: string) => Promise<void>
   onSwitchConnection: (connectionId: string) => Promise<void>
+  onDisconnect?: () => Promise<void>
   activeConnectionId?: string
 }
 
 export function EncryptedProfilesManager({ 
   onConnect, 
   onSwitchConnection,
+  onDisconnect,
   activeConnectionId 
 }: EncryptedProfilesManagerProps) {
   const [showPassphraseDialog, setShowPassphraseDialog] = useState(false)
@@ -304,7 +306,21 @@ export function EncryptedProfilesManager({
 
   const handleClearAllProfiles = async () => {
     if (confirm("Are you sure you want to delete ALL connection profiles? This action cannot be undone.")) {
+      // Disconnect first if currently connected
+      if (activeConnectionId && onDisconnect) {
+        try {
+          await onDisconnect()
+        } catch (error) {
+          console.error("Error disconnecting:", error)
+        }
+      }
+      
       await clearAllProfiles()
+      
+      toast({
+        title: "All profiles cleared",
+        description: "All connection profiles have been deleted and you've been disconnected",
+      })
     }
   }
 
