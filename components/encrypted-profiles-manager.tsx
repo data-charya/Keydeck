@@ -43,7 +43,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useEncryptedProfiles } from "@/hooks/use-encrypted-profiles"
 import { useConnectionMask } from "@/hooks/use-connection-mask"
 import { PassphraseDialog } from "@/components/passphrase-dialog"
-import { ConnectionConfig } from "@/components/connection-config"
+import { CreateProfileWizard } from "@/components/create-profile-wizard"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { RedisConfig } from "@/lib/redis-uri"
 
@@ -195,27 +195,31 @@ export function EncryptedProfilesManager({
     }
   }
 
-  const handleCreateProfile = async (config: RedisConfig, name?: string) => {
+  const handleCreateProfile = async (config: RedisConfig, connectionName: string, passphrase: string) => {
     try {
-      if (!isUnlocked) {
-        setPassphraseMode('create')
-        setShowPassphraseDialog(true)
-        setEditingProfile({ config, name })
-        return
+      // If not unlocked, set the passphrase first
+      if (!isUnlocked && passphrase) {
+        await setPassphrase(passphrase)
       }
 
-      const profileName = name || 'New Connection'
+      const profileName = connectionName || 'New Connection'
       const profileId = await saveProfile(config, profileName, '')
       setShowCreateProfileDialog(false)
       
       // Connect to the new profile with masking
       await maskConnection(onConnect, config, profileName, profileId)
+      
+      toast({
+        title: "Profile created",
+        description: `Connection profile "${profileName}" has been created successfully`,
+      })
     } catch (error) {
       toast({
         title: "Failed to save profile",
         description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       })
+      throw error // Re-throw to let wizard handle it
     }
   }
 
@@ -257,11 +261,16 @@ export function EncryptedProfilesManager({
     }
   }
 
-  const handleUpdateProfile = async (config: RedisConfig, name?: string) => {
+  const handleUpdateProfile = async (config: RedisConfig, connectionName: string, passphrase: string) => {
     try {
       if (!editingProfile) return
 
-      const profileName = name || editingProfile.name
+      // If passphrase is provided and we're not unlocked, set it
+      if (!isUnlocked && passphrase) {
+        await setPassphrase(passphrase)
+      }
+
+      const profileName = connectionName || editingProfile.name
       // Save with the same ID to update
       await saveProfile(config, profileName, '', editingProfile.id)
       setShowEditProfileDialog(false)
@@ -277,6 +286,7 @@ export function EncryptedProfilesManager({
         description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       })
+      throw error // Re-throw to let wizard handle it
     }
   }
 
@@ -700,47 +710,28 @@ export function EncryptedProfilesManager({
         error={passphraseError}
       />
 
-      {/* Create Profile Dialog */}
-      <Dialog open={showCreateProfileDialog} onOpenChange={setShowCreateProfileDialog}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Encrypted Profile</DialogTitle>
-            <DialogDescription>
-              Create a new encrypted connection profile. Your credentials will be encrypted locally with AES-256-GCM encryption.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4">
-            <ConnectionConfig 
-              onConnect={handleCreateProfile}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Create Profile Wizard */}
+      <CreateProfileWizard
+        isOpen={showCreateProfileDialog}
+        onClose={() => setShowCreateProfileDialog(false)}
+        onComplete={handleCreateProfile}
+        isUnlocked={isUnlocked}
+        mode="create"
+      />
 
-      {/* Edit Profile Dialog */}
-      <Dialog open={showEditProfileDialog} onOpenChange={(open) => {
-        setShowEditProfileDialog(open)
-        if (!open) setEditingProfile(null)
-      }}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Connection Profile</DialogTitle>
-            <DialogDescription>
-              Update your encrypted connection profile. Your credentials will remain encrypted locally with AES-256-GCM encryption.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4">
-            {editingProfile && (
-              <ConnectionConfig 
-                onConnect={handleUpdateProfile}
-                initialConfig={editingProfile}
-                initialName={editingProfile.name}
-                submitButtonText="Update Profile"
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Edit Profile Wizard */}
+      <CreateProfileWizard
+        isOpen={showEditProfileDialog}
+        onClose={() => {
+          setShowEditProfileDialog(false)
+          setEditingProfile(null)
+        }}
+        onComplete={handleUpdateProfile}
+        isUnlocked={isUnlocked}
+        initialConfig={editingProfile}
+        initialName={editingProfile?.name}
+        mode="edit"
+      />
 
       {/* Settings Dialog */}
       <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
