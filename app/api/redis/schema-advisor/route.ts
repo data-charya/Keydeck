@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getRedisClient, executeRedisCommand } from "@/lib/redis"
 import { withAPISecurity } from "@/lib/api-security"
+import type Redis from 'ioredis'
 
 interface KeyAnalysis {
   key: string
@@ -166,6 +167,172 @@ async function analyzeKeyPatterns(keys: KeyAnalysis[]): Promise<SchemaRecommenda
   return recommendations
 }
 
+// Optimized function to scan keys using SCAN (non-blocking)
+async function scanAllKeys(client: Redis, pattern: string = '*', limit: number = 100000): Promise<string[]> {
+  const keys: string[] = []
+  let cursor = '0'
+  
+  do {
+    const result = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 1000)
+    cursor = result[0]
+    keys.push(...result[1])
+    
+    if (keys.length >= limit) {
+      break
+    }
+  } while (cursor !== '0')
+  
+  return keys
+}
+
+// Single-pass aggregation for all metrics
+interface AggregatedData {
+  patternMap: Map<string, { count: number, sizes: number[], ttls: number[] }>
+  namespaceMap: Map<string, { count: number, separators: Set<string> }>
+  typeMap: Map<string, { count: number, sizes: number[] }>
+  totalMemory: number
+  withTTL: number
+  withoutTTL: number
+  largeKeys: KeyAnalysis[]
+  totalLargeMemory: number
+}
+
+function aggregateKeyData(keyAnalyses: KeyAnalysis[]): AggregatedData {
+  const patternMap = new Map<string, { count: number, sizes: number[], ttls: number[] }>()
+  const namespaceMap = new Map<string, { count: number, separators: Set<string> }>()
+  const typeMap = new Map<string, { count: number, sizes: number[] }>()
+  
+  let totalMemory = 0
+  let withTTL = 0
+  let withoutTTL = 0
+  const largeKeys: KeyAnalysis[] = []
+  let totalLargeMemory = 0
+  
+  // Single pass through all keys
+  for (const key of keyAnalyses) {
+    // Pattern analysis
+    if (!patternMap.has(key.pattern)) {
+      patternMap.set(key.pattern, { count: 0, sizes: [], ttls: [] })
+    }
+    const patternData = patternMap.get(key.pattern)!
+    patternData.count++
+    patternData.sizes.push(key.size)
+    patternData.ttls.push(key.ttl)
+    
+    // Namespace analysis
+    if (!namespaceMap.has(key.namespace)) {
+      namespaceMap.set(key.namespace, { count: 0, separators: new Set() })
+    }
+    const namespaceData = namespaceMap.get(key.namespace)!
+    namespaceData.count++
+    if (key.separator) {
+      namespaceData.separators.add(key.separator)
+    }
+    
+    // Type distribution
+    if (!typeMap.has(key.type)) {
+      typeMap.set(key.type, { count: 0, sizes: [] })
+    }
+    const typeData = typeMap.get(key.type)!
+    typeData.count++
+    typeData.sizes.push(key.size)
+    
+    // Memory and TTL totals
+    totalMemory += key.memoryUsage
+    if (key.hasTTL) {
+      withTTL++
+    } else {
+      withoutTTL++
+    }
+    
+    // Large keys
+    if (key.isLarge) {
+      largeKeys.push(key)
+      totalLargeMemory += key.memoryUsage
+    }
+  }
+  
+  return {
+    patternMap,
+    namespaceMap,
+    typeMap,
+    totalMemory,
+    withTTL,
+    withoutTTL,
+    largeKeys,
+    totalLargeMemory
+  }
+}
+
+// Optimized function to analyze keys in batches using pipelining
+async function analyzeKeysBatch(client: Redis, keys: string[]): Promise<KeyAnalysis[]> {
+  const batchSize = 500 // Process 500 keys at a time with pipelining
+  const analyses: KeyAnalysis[] = []
+  
+  for (let i = 0; i < keys.length; i += batchSize) {
+    const batch = keys.slice(i, i + batchSize)
+    
+    // Create pipeline for all commands in this batch
+    const pipeline = client.pipeline()
+    
+    // Queue all commands for this batch
+    batch.forEach(key => {
+      pipeline.type(key)
+      pipeline.ttl(key)
+      pipeline.memory('USAGE', key)
+    })
+    
+    // Execute all commands in parallel
+    const results = await pipeline.exec()
+    
+    if (!results) continue
+    
+    // Process results (3 commands per key)
+    batch.forEach((key, index) => {
+      const baseIndex = index * 3
+      const typeResult = results[baseIndex]
+      const ttlResult = results[baseIndex + 1]
+      const memoryResult = results[baseIndex + 2]
+      
+      // Check for errors
+      if (typeResult?.[0] || ttlResult?.[0] || memoryResult?.[0]) {
+        return // Skip keys with errors
+      }
+      
+      const type = typeResult[1] as string
+      const ttl = ttlResult[1] as number
+      const memoryUsage = (memoryResult[1] as number) || 0
+      
+      // Determine namespace and separator
+      const separatorMatch = key.match(/[:.-]/)
+      const separator = separatorMatch ? separatorMatch[0] : ''
+      const namespace = separator ? key.split(separator)[0] : key
+      
+      // Create pattern (replace numbers and specific values with wildcards)
+      const pattern = key
+        .replace(/\d+/g, '*')
+        .replace(/[a-f0-9]{8,}/g, '*') // Replace UUIDs/hashes
+        .replace(/\d{4}-\d{2}-\d{2}/g, '*') // Replace dates
+        .replace(/\d{13}/g, '*') // Replace timestamps
+      
+      analyses.push({
+        key,
+        type,
+        ttl,
+        size: memoryUsage,
+        memoryUsage,
+        namespace,
+        separator,
+        hasTTL: ttl > 0,
+        isLarge: memoryUsage > 1024 * 1024, // 1MB
+        pattern
+      })
+    })
+  }
+  
+  return analyses
+}
+
 async function getSchemaAnalysisHandler(request: NextRequest) {
   try {
     const redisClient = getRedisClient()
@@ -177,8 +344,8 @@ async function getSchemaAnalysisHandler(request: NextRequest) {
     const sampleSize = parseInt(searchParams.get('sampleSize') || '10000')
     const includeLargeKeys = searchParams.get('includeLargeKeys') === 'true'
 
-    // Get all keys with basic info
-    const keys = await executeRedisCommand<string[]>('KEYS', '*')
+    // Use SCAN to get all keys (non-blocking)
+    const keys = await scanAllKeys(redisClient, '*', 100000)
     const totalKeys = keys.length
 
     if (totalKeys === 0) {
@@ -256,60 +423,20 @@ async function getSchemaAnalysisHandler(request: NextRequest) {
       ? keys.sort(() => 0.5 - Math.random()).slice(0, sampleSize)
       : keys
 
-    // Analyze each key
-    const keyAnalyses: KeyAnalysis[] = []
+    // Analyze keys using optimized batched pipelining
+    console.log(`Analyzing ${keysToAnalyze.length} keys using pipelined batch processing...`)
+    const keyAnalyses = await analyzeKeysBatch(redisClient, keysToAnalyze)
+    console.log(`Successfully analyzed ${keyAnalyses.length} keys`)
+
+    // Single-pass aggregation for better performance
+    console.log('Aggregating analysis data in single pass...')
+    const aggregated = aggregateKeyData(keyAnalyses)
     
-    for (const key of keysToAnalyze) {
-      try {
-        const type = await executeRedisCommand<string>('TYPE', key)
-        const ttl = await executeRedisCommand<number>('TTL', key)
-        const memoryUsage = await executeRedisCommand<number>('MEMORY', 'USAGE', key)
-        
-        // Determine namespace and separator
-        const separatorMatch = key.match(/[:.-]/)
-        const separator = separatorMatch ? separatorMatch[0] : ''
-        const namespace = separator ? key.split(separator)[0] : key
-        
-        // Create pattern (replace numbers and specific values with wildcards)
-        const pattern = key
-          .replace(/\d+/g, '*')
-          .replace(/[a-f0-9]{8,}/g, '*') // Replace UUIDs/hashes
-          .replace(/\d{4}-\d{2}-\d{2}/g, '*') // Replace dates
-          .replace(/\d{13}/g, '*') // Replace timestamps
-
-        keyAnalyses.push({
-          key,
-          type,
-          ttl,
-          size: memoryUsage,
-          memoryUsage,
-          namespace,
-          separator,
-          hasTTL: ttl > 0,
-          isLarge: memoryUsage > 1024 * 1024, // 1MB
-          pattern
-        })
-      } catch (error) {
-        console.warn(`Failed to analyze key ${key}:`, error)
-      }
-    }
-
     // Generate recommendations
     const recommendations = await analyzeKeyPatterns(keyAnalyses)
 
-    // Analyze key patterns
-    const patternMap = new Map<string, { count: number, sizes: number[], ttls: number[] }>()
-    keyAnalyses.forEach(key => {
-      if (!patternMap.has(key.pattern)) {
-        patternMap.set(key.pattern, { count: 0, sizes: [], ttls: [] })
-      }
-      const p = patternMap.get(key.pattern)!
-      p.count++
-      p.sizes.push(key.size)
-      p.ttls.push(key.ttl)
-    })
-
-    const keyPatterns = Array.from(patternMap.entries()).map(([pattern, data]) => ({
+    // Build key patterns from aggregated data
+    const keyPatterns = Array.from(aggregated.patternMap.entries()).map(([pattern, data]) => ({
       pattern,
       count: data.count,
       percentage: Math.round((data.count / keyAnalyses.length) * 100),
@@ -317,20 +444,8 @@ async function getSchemaAnalysisHandler(request: NextRequest) {
       avgTTL: Math.round(data.ttls.reduce((a, b) => a + b, 0) / data.ttls.length)
     })).sort((a, b) => b.count - a.count)
 
-    // Analyze namespaces
-    const namespaceMap = new Map<string, { count: number, separators: Set<string> }>()
-    keyAnalyses.forEach(key => {
-      if (!namespaceMap.has(key.namespace)) {
-        namespaceMap.set(key.namespace, { count: 0, separators: new Set() })
-      }
-      const ns = namespaceMap.get(key.namespace)!
-      ns.count++
-      if (key.separator) {
-        ns.separators.add(key.separator)
-      }
-    })
-
-    const namespaceAnalysis = Array.from(namespaceMap.entries()).map(([namespace, data]) => ({
+    // Build namespace analysis from aggregated data
+    const namespaceAnalysis = Array.from(aggregated.namespaceMap.entries()).map(([namespace, data]) => ({
       namespace,
       count: data.count,
       percentage: Math.round((data.count / keyAnalyses.length) * 100),
@@ -338,51 +453,33 @@ async function getSchemaAnalysisHandler(request: NextRequest) {
       consistency: data.separators.size === 1 ? 100 : Math.round((1 / data.separators.size) * 100)
     })).sort((a, b) => b.count - a.count)
 
-    // TTL analysis
-    const withTTL = keyAnalyses.filter(k => k.hasTTL).length
-    const withoutTTL = keyAnalyses.length - withTTL
-
-    // Memory analysis
-    const largeKeys = keyAnalyses.filter(k => k.isLarge)
-    const totalLargeMemory = largeKeys.reduce((sum, k) => sum + k.memoryUsage, 0)
+    // Build type distribution from aggregated data
+    const typeDistribution = Array.from(aggregated.typeMap.entries()).map(([type, data]) => ({
+      type,
+      count: data.count,
+      percentage: Math.round((data.count / keyAnalyses.length) * 100),
+      avgSize: Math.round(data.sizes.reduce((a, b) => a + b, 0) / data.sizes.length)
+    })).sort((a, b) => b.count - a.count)
     
     // Get memory fragmentation from Redis INFO
     const info = await executeRedisCommand<string>('INFO', 'memory')
     const fragmentationMatch = info.match(/mem_fragmentation_ratio:([\d.]+)/)
     const fragmentation = fragmentationMatch ? parseFloat(fragmentationMatch[1]) : 0
 
-    // Type distribution
-    const typeMap = new Map<string, { count: number, sizes: number[] }>()
-    keyAnalyses.forEach(key => {
-      if (!typeMap.has(key.type)) {
-        typeMap.set(key.type, { count: 0, sizes: [] })
-      }
-      const t = typeMap.get(key.type)!
-      t.count++
-      t.sizes.push(key.size)
-    })
-
-    const typeDistribution = Array.from(typeMap.entries()).map(([type, data]) => ({
-      type,
-      count: data.count,
-      percentage: Math.round((data.count / keyAnalyses.length) * 100),
-      avgSize: Math.round(data.sizes.reduce((a, b) => a + b, 0) / data.sizes.length)
-    })).sort((a, b) => b.count - a.count)
-
     const analysis: SchemaAnalysis = {
       totalKeys,
-      totalMemory: keyAnalyses.reduce((sum, k) => sum + k.memoryUsage, 0),
+      totalMemory: aggregated.totalMemory,
       recommendations,
       keyPatterns,
       namespaceAnalysis,
       ttlAnalysis: {
-        withTTL,
-        withoutTTL,
-        percentage: Math.round((withTTL / keyAnalyses.length) * 100)
+        withTTL: aggregated.withTTL,
+        withoutTTL: aggregated.withoutTTL,
+        percentage: Math.round((aggregated.withTTL / keyAnalyses.length) * 100)
       },
       memoryAnalysis: {
-        largeKeys: largeKeys.length,
-        totalLargeMemory,
+        largeKeys: aggregated.largeKeys.length,
+        totalLargeMemory: aggregated.totalLargeMemory,
         fragmentation
       },
       typeDistribution
